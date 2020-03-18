@@ -1,3 +1,4 @@
+```
 PRORGAM -> STATEMENT+'_|'
 FI1(PROGRAM) = FI1(STATEMENT)
 
@@ -63,4 +64,4 @@ STRING -> [a-z]+
 INT -> [0-9]+
 
 SPECIAL_CHARS -> \r | \n | \t
-
+```
