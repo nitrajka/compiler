@@ -1,7 +1,19 @@
 package main
 
+import (
+	"fmt"
+	"github.com/nitrajka/compiler/lexicalAnalyzator"
+	"os"
+)
+
 func main() {
-	la := NewLexicalAnalyzer([]rune(";"))
+	la := lexicalAnalyzator.NewLexicalAnalyzer("globals endglobals main { ; return voidV } endmain")
 	compiler := NewCompiler(la)
-	compiler.Compile()
+	program, err := compiler.Compile()
+	if err != nil {
+		fmt.Printf("compilation failed: %v", err)
+		os.Exit(1)
+	}
+
+	fmt.Println(program)
 }
