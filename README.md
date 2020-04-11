@@ -33,7 +33,7 @@ ELSECLAUSE -> 'else' BODY | ε
 
 RETURN_CLAUSE -> 'return' VALUE
 
-VALUE -> 'var' ID | STRING | INTEGER | BOOLEAN | BOOL_EXPRESSION | ARRAY | EXPRESSION | MAP | 'voidV'
+VALUE -> 'var' ID | STRING | INTEGER | BOOLEAN | BOOL_EXPRESSION | ARRAY | EXPRESSION | MAP | 'void'
 
 ----------------------------------------------
 BOOL_EXPRESSION -> ID

@@ -44,7 +44,7 @@ func (l mockLexA) GetProgram() []string {
 
 func TestGetToken(t *testing.T) {
 	t.Run("test getToken with only spaces", func(t *testing.T) {
-		la := NewMockLexicalAnalyzer("globals endglobals main { ; return voidV } endmain")
+		la := NewMockLexicalAnalyzer("globals endglobals main { ; return void } endmain")
 		assertProgramLength(t, len(la.GetProgram()), 9)
 	})
 

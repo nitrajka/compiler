@@ -82,35 +82,30 @@ func (c compiler) compileFunctions() error {
 }
 
 func (c compiler) compileBody() error {
-	token, err := c.la.NextToken()
-	if err != nil {
-		return fmt.Errorf("compile error, BODY: %v\n", err)
-	}
-	if token != "{" {
-		return fmt.Errorf("compile error, BODY: unexpected token %v\n", token)
+	if token, err := c.la.NextToken(); err != nil {
+		return fmt.Errorf("compile error, BODY: %v", err)
+	} else if token != "{" {
+		return fmt.Errorf("compile error, BODY: unexpected token %v", token)
 	}
 
-	err = c.compileParamVars()
-	if err != nil {
-		return fmt.Errorf("compile error, BODY: %v\n", err)
+	if err := c.compileParamVars(); err != nil {
+		return fmt.Errorf("compile error, BODY: %v", err)
 	}
 
-	token, err = c.la.NextToken()
-	if err != nil {
-		return fmt.Errorf("compile error, BODY: %v\n", err)
-	}
-	if token != ";" {
-		return fmt.Errorf("compile error, BODY: unexpected token %v\n", token)
+	if token, err := c.la.NextToken(); err != nil {
+		return fmt.Errorf("compile error, BODY: %v", err)
+	} else if token != ";" {
+		return fmt.Errorf("compile error, BODY: unexpected token %v", token)
 	}
 
-	c.compileReturnClause()
-
-	token, err = c.la.NextToken()
-	if err != nil {
-		return fmt.Errorf("compile error, BODY: %v\n", err)
+	if err := c.compileReturnClause(); err != nil {
+		return fmt.Errorf("todo%v", err)
 	}
-	if token != "}" {
-		return fmt.Errorf("compile error, BODY: unexpected token %v\n", token)
+
+	if token, err := c.la.NextToken(); err != nil {
+		return fmt.Errorf("compile error, BODY: %v", err)
+	} else if token != "}" {
+		return fmt.Errorf("compile error, BODY: unexpected token %v", token)
 	}
 
 	return nil
@@ -135,7 +130,7 @@ func (c compiler) compileValue() error {
 	}
 
 	switch token {
-	case "voidV":
+	case "void":
 		return nil
 	default:
 		return fmt.Errorf("compile error, VALUE: unexpected token %v\n", token)

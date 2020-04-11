@@ -54,7 +54,7 @@ FI1(ELSECLAUSE) = {'else'} + FO1(ELSECLAUSE)
 RETURN_CLAUSE -> 'return' VALUE
 FI1(RETURN_CLAUSE) = {'return'}
 
-VALUE -> 'var' ID | STRING | INTEGER | BOOLEAN | BOOL_EXPRESSION | ARRAY | EXPRESSION | MAP | 'voidV'
+VALUE -> 'var' ID | STRING | INTEGER | BOOLEAN | BOOL_EXPRESSION | ARRAY | EXPRESSION | MAP | 'void'
 FI1(VALUE) = {'var', '"', [0-9]+, '-', 'true', 'false', '[]', 'voidV'} + FI1(BOOL_EXPRESSION) + FI1(EXPRESSION) + FI1(MAP)
            = {'var', '"', [0-9]+, '-', 'true', 'false', '[]', 'voidV'} + {'<', '>', '==', '!=', '<=', '>=', '{'} + {[a-z]+} + {'(', ','}
 

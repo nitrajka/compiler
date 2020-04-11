@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	la := lexicalAnalyzator.NewLexicalAnalyzer("globals endglobals main { ; return voidV } endmain")
+	la := lexicalAnalyzator.NewLexicalAnalyzer("globals endglobals main { ; return void } endmain")
 	compiler := NewCompiler(la)
 	program, err := compiler.Compile()
 	if err != nil {

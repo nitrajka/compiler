@@ -7,14 +7,7 @@ import (
 
 func TestCompile(t *testing.T) {
 	t.Run("simplest correct program", func(t *testing.T) {
-		la := lexicalAnalyzator.NewLexicalAnalyzer("globals endglobals main { ; return voidV } endmain")
-		compiler := NewCompiler(la)
-		_, err := compiler.Compile()
-		assertError(t, err, nil)
-	})
-
-	t.Run("simple correct programs", func(t *testing.T) {
-		la := lexicalAnalyzator.NewLexicalAnalyzer("globals endglobals main { ; return voidV } endmain")
+		la := lexicalAnalyzator.NewLexicalAnalyzer("globals endglobals main { ; return void } endmain")
 		compiler := NewCompiler(la)
 		_, err := compiler.Compile()
 		assertError(t, err, nil)
