@@ -1,4 +1,4 @@
-package lexicalAnalyzator
+package lexicalanalyser
 
 import (
 	"fmt"
@@ -11,13 +11,13 @@ type mockLexA struct {
 	Current int
 }
 
-type mockLexicalAnalyzer interface {
-	LexicalAnalyzer
+type mockLexicalAnalyser interface {
+	LexicalAnalyser
 	GetProgram() []string
 }
 
-func NewMockLexicalAnalyzer(Program string) mockLexicalAnalyzer {
-	return &mockLexA{Program: strings.Fields(Program), Current: 0}
+func newMockLexicalAnalyzer(program string) mockLexicalAnalyser {
+	return &mockLexA{Program: strings.Fields(program), Current: 0}
 }
 
 func (l mockLexA) GetToken() (string, error) {
@@ -44,18 +44,17 @@ func (l mockLexA) GetProgram() []string {
 
 func TestGetToken(t *testing.T) {
 	t.Run("test getToken with only spaces", func(t *testing.T) {
-		la := NewMockLexicalAnalyzer("globals endglobals main { ; return void } endmain")
+		la := newMockLexicalAnalyzer("globals endglobals main { ; return void } endmain")
 		assertProgramLength(t, len(la.GetProgram()), 9)
 	})
 
 	t.Run("test getToken with spaces, tabs, newlines", func(t *testing.T) {
-		la := NewMockLexicalAnalyzer(`globals 	
+		la := newMockLexicalAnalyzer(`globals 	
 
 			
 	endglobals main { ; return voidV } endmain`)
 		assertProgramLength(t, len(la.GetProgram()), 9)
 	})
-
 }
 
 func assertProgramLength(t *testing.T, actual, expected int) {

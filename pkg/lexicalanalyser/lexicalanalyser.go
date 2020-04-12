@@ -1,11 +1,11 @@
-package lexicalAnalyzator
+package lexicalanalyser
 
 import (
 	"fmt"
 	"strings"
 )
 
-type LexicalAnalyzer interface {
+type LexicalAnalyser interface {
 	GetToken() (string, error)
 	NextToken() (string, error)
 }
@@ -15,7 +15,7 @@ type lexA struct {
 	current int
 }
 
-func NewLexicalAnalyzer(program string) LexicalAnalyzer {
+func NewLexicalAnalyzer(program string) LexicalAnalyser {
 	return &lexA{program: strings.Fields(program), current: 0}
 }
 
