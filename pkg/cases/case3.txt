@@ -1,0 +1,9 @@
+globals
+
+endglobals
+
+main {;
+	ifa==b {;}
+}
+
+endmain

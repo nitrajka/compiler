@@ -1,4 +1,10 @@
 ## Compiler for custom minimalistic grammar
+I made up the following grammar and programmed a compiler for it. This is a university project.
+
+### How to compile
+
+1. Downlaod and install the compiler  by running `go get github.com/nitrajka/compiler`.
+1. Compile program `compilang myprogram.col`.
 
 ### Grammar
 ```

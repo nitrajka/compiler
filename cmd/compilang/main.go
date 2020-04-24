@@ -1,37 +1,54 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/nitrajka/compiler/pkg"
-
-	"github.com/nitrajka/compiler/pkg/lexicalanalyser"
 )
 
 func main() {
-	flag.Parse()
-	programFileName := flag.Arg(0)
-	if programFileName == "" {
-		exit(fmt.Sprintf("provide program file to compile"))
-	}
+	//flag.Parse()
+	//programFileName := flag.Arg(0)
+	//if programFileName == "" {
+	//	exit(fmt.Sprintf("provide program file to compile"))
+	//}
+	//
+	//content, err := ioutil.ReadFile(programFileName)
+	//if err != nil {
+	//	exit(fmt.Sprintf("reading of file failed %v", err))
+	//}
 
-	content, err := ioutil.ReadFile(programFileName)
+	//	if n < 0 {;
+	//	} else {
+	//		if n==1 {;} else if n==2 {; return 1} else {; return fibonacci(n-1)+fibonacci(n-2) }
+	//
+	//	}
+	content := `globals
+	string [raw]
+	int [i, j, k]
+endglobals
+main
+	{;
+		if a==b {;}
+		if arr a[1] == arr b[1] {;}
+		return void
+	}
+endmain
+`
+	parser := &lexicalanalyser.MyParser{Buffer: string(content), Pretty: true}
+	err := parser.Init()
 	if err != nil {
-		exit(fmt.Sprintf("reading of file failed %v", err))
+		exit(err.Error())
+	}
+	if err := parser.Parse(1); err != nil {
+		exit(err.Error())
 	}
 
-	//todo: readme - ako to spustit, skompilovat
-	la := lexicalanalyser.NewLexicalAnalyzer(string(content))
-	compiler := pkg.NewCompiler(la)
-	program, err := compiler.Compile()
-	if err != nil {
-		exit(fmt.Sprintf("compilation failed: %v", err))
-	}
-
-	fmt.Println(program)
+	//ast := parser.AST()
+	//parser.PrettyPrintSyntaxTree(content)
+	parser.WalkAndDeleteUnwanted(content)
+	//parser.Walk()
 }
 
 func exit(err string) {

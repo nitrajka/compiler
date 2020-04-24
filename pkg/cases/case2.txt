@@ -1,0 +1,55 @@
+globals
+	string [raw]
+	int [i, j, k]
+	bool [myBool1, myBool2]
+endglobals
+
+func Fibonacci(int [n]): bool {;}
+
+func get_token(string [test] int [position]): string {; return arr test[1]}
+
+func get_token1(string [test] int [position]): string {; return arr test[var some_variable]}
+
+func Very_Hacky_kaky_func_name(): void {;}
+
+func returns_array(): [5]int {;}
+
+func returns_map(): map[string]int {;}
+
+main
+	{
+		string [raw]
+		int [p]
+		;
+		if a==b {;}
+		if a ==b {;}
+		if a== b {;}
+		if a == b {;}
+		if a  ==     b {;}
+		if a    ==b {;}
+
+		while a <= b {;}
+		while a >= b {;}
+		while a == b {;}
+		while a != b {; return arr a}
+		while a < b {; return arr a[2]}
+		while a > b {;}
+		while a    <=    b {;}
+
+		c = cap+capp
+		c = cap + capp
+		c = cap   -    capp
+		c = cap*    capp
+		c = cap/capp
+		c = cap *capp
+		c = cap    +capp
+		c = []string[ "hello", "world", "this", "is", "me"]
+
+		c = "Hello world!"
+
+		call fibonacci()
+
+		arr k[2] = "hello"
+		return void
+	}
+endmain
