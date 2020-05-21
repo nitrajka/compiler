@@ -25,13 +25,45 @@ func main() {
 	//
 	//	}
 	content := `globals
-	string [raw]
-	int [i, j, k]
+	string [raw, a, b, c]
+	int [i, j, k, p]
+	bool [s]
 endglobals
+
+func fibonacci(int [n]): int {
+	int [res1, res2];
+	if n <= 0 {; print("invalid input") }
+    else {;
+		if n == 1 {; return 0}
+		if n == 2 {; return 1}
+		k = n-1
+		p = n-2
+		res1 = call fibonacci(k)
+		res2 = call fibonacci(p)
+		return res1 + res2
+    }
+
+}
+
+func fibonacci(int [n]): int {;
+	print("zbytocna funkcia")
+}
+
+func emptyfunction(): void {;}
+
 main
-	{;
+	{ string [a] ;
 		if a==b {;}
-		if arr a[1] == arr b[1] {;}
+		if 1 == -1 {;}
+		if "ahoj" == "cau" {;} else {;}
+		if a == b == c {;}
+		if true == false {;}
+		while a == b {;}
+		newvar = -3
+		k = var p
+		z = "ahoj"
+		msg = true
+		print(a)
 		return void
 	}
 endmain

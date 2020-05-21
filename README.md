@@ -6,6 +6,11 @@ I made up the following grammar and programmed a compiler for it. This is a univ
 1. Downlaod and install the compiler  by running `go get github.com/nitrajka/compiler`.
 1. Compile program `compilang myprogram.col`.
 
+
+#### Generating lexical analyzer
+
+`peg -switch -inline -strict -output pkg/grammar.go pkg/grammar.peg`
+
 ### Grammar
 ```
 ROOT -> 'globals' PARAMS_VARS 'endglobals' FUNCTIONS 'main' BODY 'endmain'
