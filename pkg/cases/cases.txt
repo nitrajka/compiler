@@ -1,0 +1,6 @@
+- functions have unnique name
+- semantics is valid on recursive call
+- mozem pouzit nie len tie funckcie ktore boli vyssie zadefinovane
+- validate return in function, whether return returns predefined type
+- return in if/while clause (and other body block)
+	-> check to which scope "return" reffers to (whether if is in function) + validate

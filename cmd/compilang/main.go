@@ -41,13 +41,9 @@ func fibonacci(int [n]): int {
 		p = n-2
 		res1 = call fibonacci(k)
 		res2 = call fibonacci(p)
-		v = call emptyfunction()
 		return res1 + res2
     }
-
 }
-
-func emptyfunction(): void {;}
 
 main
 	{ string [a, z] bool [msg] ;

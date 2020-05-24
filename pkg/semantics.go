@@ -22,6 +22,7 @@ type Id struct {
 type Scope struct {
 	vars map[string]Id
 	up *Scope
+	currentFunction string
 }
 
 type Func struct {
@@ -101,6 +102,7 @@ func (node *node32) checkSemantics(buffer string) error {
 		tmpNode = tmpNode.next
 	}
 	//validate main body
+	globalScope.currentFunction = "main"
 	err = tmpNode.validateBody(buffer, globalScope)
 	if err != nil {
 		return fmt.Errorf("semantics error: main function invalid: %s", err)
@@ -134,6 +136,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (Id, error) {
 		return Id{}, fmt.Errorf("function params vars: %s", err)
 	}
 	functionScope.up = scope
+	functionScope.currentFunction = buffer[functionNode.up.begin: functionNode.up.end]
 	body := functionNode.up.next.next.next
 	if rul3s[functionNode.up.next.next.pegRule] == rul3s[ruleBODY] {
 		body = functionNode.up.next.next
@@ -141,12 +144,8 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (Id, error) {
 	if err := body.validateBody(buffer, functionScope); err != nil {
 		return Id{}, fmt.Errorf("%s", err)
 	}
-	//todo: validate return in function, whether return returns predefined type
-	//todo: return in if clause (and other body block) -> check to which scope "return" reffers to (whether if is in function)
 	//todo: vyriesit problem s rovnakym scope vo function params a function body
-	//functions must have unique names
-	//function must be declared before used (recursion?)
-	//mozem pouzit nie len tie funckcie ktore boli vyssie zadefinovane
+	//todo: volanie funkcie s vhodnymi parametrami (pocet + typy)
 	funcType := buffer[functionNode.up.next.next.begin:functionNode.up.next.next.end]
 	if rul3s[functionNode.up.next.pegRule] != rul3s[rulePARAMS_VARS] {
 		funcType = buffer[functionNode.up.next.begin:functionNode.up.next.end]
@@ -206,29 +205,46 @@ func (node *node32) validateBody(buffer string, scope *Scope) error {
 			return err
 		}
 		bodyScope.up = scope
-		statement := statements.up
-		for statement != nil {
-			statementRule := rul3s[statement.up.pegRule]
-			switch statementRule {
-			case rul3s[ruleIF_STATEMENT]:
-				bodyScope.up = scope
-				if err := statement.up.validateIfStatement(buffer, bodyScope); err != nil {
-					return fmt.Errorf("%s", err)
+		bodyScope.currentFunction = scope.currentFunction
+		if rul3s[statements.pegRule] == rul3s[ruleSTATEMENTS] {
+			statement := statements.up
+			for statement != nil && rul3s[statement.pegRule] == rul3s[ruleSTATEMENT] {
+				switch rul3s[statement.up.pegRule] {
+				case rul3s[ruleIF_STATEMENT]:
+					bodyScope.up = scope
+					if err := statement.up.validateIfStatement(buffer, bodyScope); err != nil {
+						return err
+					}
+				case rul3s[ruleWHILE_STATEMENT]:
+					if err := statement.up.validateWhileStatement(buffer, scope); err != nil {
+						return err
+					}
+				case rul3s[ruleASSIGNMENT]:
+					if err := statement.up.validateAssignment(buffer, bodyScope); err != nil {
+						return err
+					}
+					//case rul3s[ruleFUNC_CALL]: // lebo viem modifikovat globalne premenne
+					//	return validateFuncCall()
+					//case rul3s[rulePRINT_STATEMENT]:
+					//	return validatePrintStatement()
 				}
-			case rul3s[ruleWHILE_STATEMENT]:
-				if err := statement.up.validateWhileStatement(buffer, scope); err != nil {
-					return fmt.Errorf("%s", err)
-				}
-			case rul3s[ruleASSIGNMENT]:
-				if err := statement.up.validateAssignment(buffer, bodyScope); err != nil {
-					return fmt.Errorf("%s", err)
-				}
-			//case rul3s[ruleFUNC_CALL]: // lebo viem modifikovat globalne premenne
-			//	return validateFuncCall()
-			//case rul3s[rulePRINT_STATEMENT]:
-			//	return validatePrintStatement()
+				statement = statement.next
 			}
-			statement = statement.next
+		} else if rul3s[statements.pegRule] == rul3s[ruleRETURN_CLAUSE] {
+			//validate return - check type of return value with function type
+			retType, err := statements.up.up.getValueType(buffer, bodyScope)
+			if err != nil {
+				return err
+			}
+			funcType, isInScope := isVarInScope(bodyScope, bodyScope.currentFunction)
+			if !isInScope {
+				return fmt.Errorf("undefined function: %s", bodyScope.currentFunction)
+			}
+			if funcType != retType {
+				return fmt.Errorf("cannot return %s value in function of type %s, in function %s", retType, funcType, bodyScope.currentFunction)
+			}
+
+			return nil
 		}
 	}
 	return nil
@@ -365,7 +381,6 @@ func (node *node32) getValueType(buffer string, scope *Scope) (VariableType, err
 		}
 		return exprType, nil
 	case rul3s[ruleFUNC_CALL]:
-		//todo: check if function defined + get its type
 		funcType, err := node.up.getValueType(buffer, scope)
 		if err != nil {
 			return "", err
@@ -381,6 +396,18 @@ func (node *node32) isVarInScope(scope *Scope, buffer string) (VariableType, boo
 	if id, ok := scope.vars[variable]; ok {
 		return id.variableType, true
 	}
+	return stringToVariableType("unknown"), false
+}
+
+func isVarInScope(scope *Scope, variable string) (VariableType, bool) {
+	tmpScp := scope
+	for tmpScp != nil {
+		if id, ok := tmpScp.vars[variable]; ok {
+			return id.variableType, true
+		}
+		tmpScp = tmpScp.up
+	}
+
 	return stringToVariableType("unknown"), false
 }
 
