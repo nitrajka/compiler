@@ -23,7 +23,7 @@ func (t *tokens32) WalkAndDeleteUnwanted(buffer string) {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("no error")
+		fmt.Println("program ok")
 	}
 }
 
@@ -195,10 +195,12 @@ func (node *node32) parseStrings() {
 	}
 	rule := rul3s[node.pegRule]
 	if rule == rul3s[ruleTEXT] {
-		node.begin = node.up.begin
-		node.end = node.up.end
-		node.token32 = token32{pegRule: ruleTEXT, begin: node.begin, end: node.end}
-		node.up = nil
+		if node.up != nil { // if is empty string, has no STRING child
+			node.begin = node.up.begin
+			node.end = node.up.end
+			node.token32 = token32{pegRule: ruleTEXT, begin: node.begin, end: node.end}
+			node.up = nil
+		}
 	}
 	if node.up != nil {
 		node.up.parseStrings()

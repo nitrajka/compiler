@@ -5,15 +5,17 @@ import (
 )
 
 
-type IDType string
+type VariableKind string
 
 const(
-	Variable IDType = "variable"
+	Variable VariableKind = "variable"
 	Function = "function"
 )
 
 type Id struct {
-	typ IDType
+	variableKind VariableKind
+	variableType VariableType
+	name string
 	additionalInfo interface{}
 }
 
@@ -23,15 +25,11 @@ type Scope struct {
 }
 
 type Func struct {
-	name string
 	paramsVars *Scope
-	typ VariableType
 	bodyValid bool
 }
 
 type Var struct {
-	name string
-	typ VariableType
 	value interface{}
 }
 
@@ -64,12 +62,6 @@ func stringToBaseValue(typ string) interface{} {
 		return 0
 	case "boolean":
 		return false
-	case "arr_string":
-		return make([]string, 0)
-	case "arr_integer":
-		return make([]int, 0)
-	case "arr_boolean":
-		return make([]bool, 0)
 	default:
 		return "unknown"
 	}
@@ -81,25 +73,26 @@ func (node *node32) checkSemantics(buffer string) error {
 	if err != nil {
 		return fmt.Errorf("semantics error: %s", err)
 	}
-	fmt.Println(globalScope.vars)
+	//fmt.Println(globalScope.vars)
 
 	if rul3s[tmpNode.pegRule] == rul3s[ruleFUNCTIONS] {
 		functionNode := tmpNode.up
+
+		//declare all functions into global scope
 		for functionNode != nil {
-			//funcType := buffer[functionNode.up.next.next.begin:functionNode.up.next.next.end]
-			//if rul3s[functionNode.up.next.pegRule] != rul3s[rulePARAMS_VARS] {
-			//	funcType = buffer[functionNode.up.next.begin:functionNode.up.next.end]
-			//}
-			//
-			//tmpId := Id{typ: Function, additionalInfo: Func{
-			//	name: buffer[functionNode.up.begin: functionNode.up.end],
-			//	paramsVars: functionScope,
-			//	typ: stringToVariableType(funcType),
-			//	bodyValid: true,
-			//}}
-			//globalScope.vars[buffer[functionNode.up.begin:functionNode.up.end]] = tmpId
-			id, err := functionNode.validateFunction(buffer, globalScope)
+			id, err := functionNode.declareFunction(buffer, globalScope)
+			if err != nil {
+				return fmt.Errorf("semantics error: %s", err)
+			}
 			globalScope.vars[buffer[functionNode.up.begin:functionNode.up.end]] = id
+			functionNode = functionNode.next
+		}
+
+		//define all previously declared functions
+		functionNode = tmpNode.up
+		for functionNode != nil {
+			id, err := functionNode.validateFunction(buffer, globalScope)
+			globalScope.vars[buffer[functionNode.up.begin:functionNode.up.end]] = id // additionalInfo changes
 			if err != nil {
 				return fmt.Errorf("semantics error: %s", err)
 			}
@@ -115,17 +108,32 @@ func (node *node32) checkSemantics(buffer string) error {
 	return nil
 }
 
-func (node *node32) validateFunction(buffer string, scope *Scope) (Id, error) {
-	functionNode := node
-	_, isInScope := functionNode.isVarInScope(scope, buffer)
+func (node *node32) declareFunction(buffer string, scope *Scope) (Id, error) {
+	_, isInScope := node.up.isVarInScope(scope, buffer)
 	if isInScope {
 		return Id{}, fmt.Errorf("function name must be unique: %s", buffer[node.up.begin:node.up.end])
 	}
+
+	funcType := buffer[node.up.next.next.begin:node.up.next.next.end]
+	if rul3s[node.up.next.pegRule] != rul3s[rulePARAMS_VARS] {
+		funcType = buffer[node.up.next.begin:node.up.next.end]
+	}
+
+	return Id{
+		variableKind: Function,
+		variableType: stringToVariableType(funcType),
+		name: buffer[node.up.begin: node.up.end],
+		additionalInfo: nil,
+	}, nil
+}
+
+func (node *node32) validateFunction(buffer string, scope *Scope) (Id, error) {
+	functionNode := node
 	functionScope, _, err := functionNode.up.next.getParamsVars(buffer)
-	functionScope.up = scope
 	if err != nil {
 		return Id{}, fmt.Errorf("function params vars: %s", err)
 	}
+	functionScope.up = scope
 	body := functionNode.up.next.next.next
 	if rul3s[functionNode.up.next.next.pegRule] == rul3s[ruleBODY] {
 		body = functionNode.up.next.next
@@ -134,18 +142,23 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (Id, error) {
 		return Id{}, fmt.Errorf("%s", err)
 	}
 	//todo: validate return in function, whether return returns predefined type
-	//todo: return in if clause (and other body block) -> check whether if is in function
-	//todo: functions must have unique names
+	//todo: return in if clause (and other body block) -> check to which scope "return" reffers to (whether if is in function)
+	//todo: vyriesit problem s rovnakym scope vo function params a function body
+	//functions must have unique names
+	//function must be declared before used (recursion?)
+	//mozem pouzit nie len tie funckcie ktore boli vyssie zadefinovane
 	funcType := buffer[functionNode.up.next.next.begin:functionNode.up.next.next.end]
 	if rul3s[functionNode.up.next.pegRule] != rul3s[rulePARAMS_VARS] {
 		funcType = buffer[functionNode.up.next.begin:functionNode.up.next.end]
 	}
-	return Id{typ: Function, additionalInfo: Func{
+	return Id{
+		variableKind: Function,
 		name: buffer[functionNode.up.begin: functionNode.up.end],
-		paramsVars: functionScope,
-		typ: stringToVariableType(funcType),
-		bodyValid: true,
-	}}, nil
+		variableType: stringToVariableType(funcType),
+		additionalInfo: Func{
+			paramsVars: functionScope,
+			bodyValid: true,
+		}}, nil
 }
 
 func (node *node32) getParamsVars(buffer string) (*Scope, *node32, error) {
@@ -159,8 +172,8 @@ func (node *node32) getParamsVars(buffer string) (*Scope, *node32, error) {
 			if _, ok := vars[varID]; ok {
 				return nil, node, fmt.Errorf("cannot define same variable ID more times: %s", varID)
 			} else {
-				vars[varID] = Id{typ: Variable,
-					additionalInfo: Var{name: varID, typ: stringToVariableType(typ), value: stringToBaseValue(typ)},
+				vars[varID] = Id{variableKind: Variable, name: varID, variableType: stringToVariableType(typ),
+					additionalInfo: Var{value: stringToBaseValue(typ)},
 				}
 			}
 		}
@@ -188,7 +201,11 @@ func (node *node32) validateBody(buffer string, scope *Scope) error {
 	}
 
 	if rul3s[node.pegRule] == rul3s[ruleBODY] && node.up != nil {
-		bodyScope, statements, _ := node.up.getParamsVars(buffer)
+		bodyScope, statements, err := node.up.getParamsVars(buffer)
+		if err !=  nil {
+			return err
+		}
+		bodyScope.up = scope
 		statement := statements.up
 		for statement != nil {
 			statementRule := rul3s[statement.up.pegRule]
@@ -203,7 +220,7 @@ func (node *node32) validateBody(buffer string, scope *Scope) error {
 					return fmt.Errorf("%s", err)
 				}
 			case rul3s[ruleASSIGNMENT]:
-				if err := statement.up.validateAssignment(buffer, scope); err != nil {
+				if err := statement.up.validateAssignment(buffer, bodyScope); err != nil {
 					return fmt.Errorf("%s", err)
 				}
 			//case rul3s[ruleFUNC_CALL]: // lebo viem modifikovat globalne premenne
@@ -217,7 +234,6 @@ func (node *node32) validateBody(buffer string, scope *Scope) error {
 	return nil
 }
 
-//todo: vyriesit problem s rovnakym scope vo function params a function body
 func (node *node32) validateIfStatement(buffer string, scope *Scope) error {
 	rule := rul3s[node.pegRule]
 	if rule == rul3s[ruleIF_STATEMENT] {
@@ -260,7 +276,7 @@ func (node *node32) validateAssignment(buffer string, scope *Scope) error {
 			return fmt.Errorf("could not get type of value: %s", err)
 		}
 		if varType != valueType {
-			return fmt.Errorf("cannod assign %s value to %s variable: %s", valueType , varType , err)
+			return fmt.Errorf("cannot assign %s value to %s variable: %s", valueType , varType, buffer[node.begin:node.end])
 		}
 
 	}
@@ -314,8 +330,8 @@ func (node *node32) checkBoolExpression(buffer string, scope *Scope) (*node32, e
 }
 
 func (node *node32) getValueType(buffer string, scope *Scope) (VariableType, error) {
-	fmt.Println(buffer[node.begin:node.end])
-	fmt.Println(node.pegRule)
+	//fmt.Println(buffer[node.begin:node.end])
+	//fmt.Println(node.pegRule)
 	switch rul3s[node.pegRule] {
 	case rul3s[ruleID]:
 		//res := ""
@@ -363,15 +379,7 @@ func (node *node32) getValueType(buffer string, scope *Scope) (VariableType, err
 func (node *node32) isVarInScope(scope *Scope, buffer string) (VariableType, bool) {
 	variable := buffer[node.begin:node.end]
 	if id, ok := scope.vars[variable]; ok {
-		vari, ok := id.additionalInfo.(Var)
-		if ok {
-			return vari.typ, true
-		}
-
-		funct, ok := id.additionalInfo.(Func)
-		if ok {
-			return funct.typ, true
-		}
+		return id.variableType, true
 	}
 	return stringToVariableType("unknown"), false
 }

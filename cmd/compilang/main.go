@@ -25,9 +25,10 @@ func main() {
 	//
 	//	}
 	content := `globals
-	string [raw, a, b, c]
+	string [raw, a, b, c, z]
 	int [i, j, k, p]
 	bool [s]
+	void [v]
 endglobals
 
 func fibonacci(int [n]): int {
@@ -40,26 +41,23 @@ func fibonacci(int [n]): int {
 		p = n-2
 		res1 = call fibonacci(k)
 		res2 = call fibonacci(p)
+		v = call emptyfunction()
 		return res1 + res2
     }
 
 }
 
-func fibonacci(int [n]): int {;
-	print("zbytocna funkcia")
-}
-
 func emptyfunction(): void {;}
 
 main
-	{ string [a] ;
+	{ string [a, z] bool [msg] ;
 		if a==b {;}
 		if 1 == -1 {;}
 		if "ahoj" == "cau" {;} else {;}
 		if a == b == c {;}
 		if true == false {;}
 		while a == b {;}
-		newvar = -3
+		a = ""
 		k = var p
 		z = "ahoj"
 		msg = true
