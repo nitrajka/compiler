@@ -9,10 +9,9 @@ func (t *tokens32) WalkAndDeleteUnwanted(buffer string) {
 	node := t.AST()
 	node.deleteWhitespace()
 	node.parsePARAMS_VARS()
-	//node.PrettyPrint(os.Stdout, buffer)
-	//node.parseFunctions()
+	node.parseFuncCall()
 	node.parseStatements()
-	node.parseIfWhileStatement(buffer)
+	node.parseIfWhileStatement()
 	node.parseStrings()
 	node.parseIntegers()
 	node.parseAssignment()
@@ -59,24 +58,18 @@ func (node *node32) parsePARAMS_VARS() {
 	}
 
 	if rul3s[node.pegRule] == rul3s[rulePARAMS_VARS] {
-		//typ := strconv.Quote(string(([]rune(buffer)[node.up.begin:node.up.end])))
-		ids := node.up.next.parseVAR_LIST()
+		node.up.next.parseVarList()
 
-		if node.up.next.next != nil {
+		if node.up.next.next != nil { // next params vars
 			tmp := node.next
 			node.next = node.up.next.next
+			node.up.next.next = nil
 			node.next.next = tmp
 		}
 
-		//fmt.Println(ids)
-		if len(ids) > 0 {
-			node.up = &node32{token32: token32{pegRule: ruleTYPE, begin: node.up.begin, end: node.up.end}}
-			node.up.up = &node32{token32: token32{pegRule: ruleID, begin: ids[0].begin, end: ids[0].end}}
-			node1 := &node.up.up
-			for i := 1; i < len(ids); i++ {
-				(*node1).next = &node32{token32: token32{pegRule: ruleID, begin: ids[i].begin, end: ids[i].end}}
-				node1 = &(*node1).next
-			}
+		if node.up.next != nil {
+			node.up.up = node.up.next.up
+			node.up.next = nil
 		}
 
 	} else {
@@ -89,44 +82,43 @@ func (node *node32) parsePARAMS_VARS() {
 	}
 }
 
-type ID struct {
-	begin, end uint32
-}
-
-func (node *node32) parseVAR_LIST() []ID {
+func (node *node32) parseFuncCall() {
 	if node == nil {
-		return nil
-	}
-	rule := rul3s[node.pegRule]
-	var ids []ID
-
-	if rule == rul3s[ruleVAR_LIST] {
-		node1 := node.up
-		ruleNode := rul3s[node1.pegRule]
-		if ruleNode == rul3s[ruleID] {
-			ids = append(ids, ID{begin: node1.token32.begin, end: node1.token32.end})
-		}
-		node2 := node1.next
-		for node2 != nil {
-			ids = append(ids, node2.parseVAR_LIST()...)
-			node2 = node2.next
-		}
-		if node1.up != nil {
-			node1.up.parseVAR_LIST()
-		}
-	} else if rule == rul3s[ruleVAR_LIST1] {
-		return  node.up.parseVAR_LIST()
+		return
 	}
 
-	return ids
+	if rul3s[node.pegRule] == rul3s[ruleFUNC_CALL] {
+		if node.up.next != nil {
+			node.up.next.parseVarList()
+			node.up.next = node.up.next.up
+		}
+	}
+
+	if node.up != nil {
+		node.up.parseFuncCall()
+	}
+
+	if node.next != nil {
+		node.next.parseFuncCall()
+	}
 }
 
-//func (node *node32) parseFunctions() {
-//	if node == nil {
-//		return
-//	}
-//
-//}
+func (node *node32) parseVarList() {
+	if node == nil {
+		return
+	}
+	if rul3s[node.pegRule] == rul3s[ruleVAR_LIST] {
+		if node.up.next != nil {
+			node.up.next = node.up.next.up.up
+		}
+		node.up.next.parseVarList()
+	} else if rul3s[node.pegRule] == rul3s[ruleID] {
+		if node.next != nil {
+			node.next = node.next.up.up
+		}
+		node.next.parseVarList()
+	}
+}
 
 func (node *node32) parseStatements() {
 	if node == nil {
@@ -146,7 +138,7 @@ func (node *node32) parseStatements() {
 	}
 }
 
-func (node *node32) parseIfWhileStatement(buffer string) {
+func (node *node32) parseIfWhileStatement() {
 	if node == nil {
 		return
 	}
@@ -182,10 +174,10 @@ func (node *node32) parseIfWhileStatement(buffer string) {
 	}
 
 	if node.up != nil {
-		node.up.parseIfWhileStatement(buffer)
+		node.up.parseIfWhileStatement()
 	}
 	if node.next != nil {
-		node.next.parseIfWhileStatement(buffer)
+		node.next.parseIfWhileStatement()
 	}
 }
 

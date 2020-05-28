@@ -697,7 +697,7 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 			position, tokenIndex = position13, tokenIndex13
 			return false
 		},
-		/* 4 VAR_LIST <- <(ID VAR_LIST1* WHITESPACE_ANY)> */
+		/* 4 VAR_LIST <- <(ID VAR_LIST1*)> */
 		func() bool {
 			position17, tokenIndex17 := position, tokenIndex
 			{
@@ -715,9 +715,6 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 				l20:
 					position, tokenIndex = position20, tokenIndex20
 				}
-				if !_rules[ruleWHITESPACE_ANY]() {
-					goto l17
-				}
 				add(ruleVAR_LIST, position18)
 			}
 			return true
@@ -725,7 +722,7 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 			position, tokenIndex = position17, tokenIndex17
 			return false
 		},
-		/* 5 VAR_LIST1 <- <(JUST_SPACES ',' JUST_SPACES VAR_LIST VAR_LIST1* JUST_SPACES)> */
+		/* 5 VAR_LIST1 <- <(JUST_SPACES ',' JUST_SPACES VAR_LIST VAR_LIST1*)> */
 		func() bool {
 			position21, tokenIndex21 := position, tokenIndex
 			{
@@ -752,9 +749,6 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 					goto l23
 				l24:
 					position, tokenIndex = position24, tokenIndex24
-				}
-				if !_rules[ruleJUST_SPACES]() {
-					goto l21
 				}
 				add(ruleVAR_LIST1, position22)
 			}
@@ -1125,6 +1119,16 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 									position++
 									add(rulePRINT_STATEMENT, position49)
 								}
+								if !_rules[ruleWHITESPACE_ANY]() {
+									goto l39
+								}
+							case 'c':
+								if !_rules[ruleFUNC_CALL]() {
+									goto l39
+								}
+								if !_rules[ruleWHITESPACE_ANY]() {
+									goto l39
+								}
 							case 'w':
 								{
 									position50 := position
@@ -1253,7 +1257,7 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 			position, tokenIndex = position39, tokenIndex39
 			return false
 		},
-		/* 9 STATEMENT <- <((ASSIGNMENT WHITESPACE_ANY) / ((&('p') PRINT_STATEMENT) | (&('w') WHILE_STATEMENT) | (&('i') IF_STATEMENT)))> */
+		/* 9 STATEMENT <- <((ASSIGNMENT WHITESPACE_ANY) / ((&('p') (PRINT_STATEMENT WHITESPACE_ANY)) | (&('c') (FUNC_CALL WHITESPACE_ANY)) | (&('w') WHILE_STATEMENT) | (&('i') IF_STATEMENT)))> */
 		nil,
 		/* 10 IF_STATEMENT <- <('i' 'f' AT_LEAST_ONE_SPACE BOOL_EXPRESSION AT_LEAST_ONE_SPACE BODY ELSECLAUSE? WHITESPACE_ANY)> */
 		nil,
@@ -1645,7 +1649,7 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 		nil,
 		/* 23 ASSIGNMENT <- <(ASSIGNABLE JUST_SPACES '=' JUST_SPACES VALUE)> */
 		nil,
-		/* 24 FUNC_CALL <- <('c' 'a' 'l' 'l' JUST_SPACES ID JUST_SPACES '(' WHITESPACE_ANY VAR_LIST* WHITESPACE_ANY ')')> */
+		/* 24 FUNC_CALL <- <('c' 'a' 'l' 'l' JUST_SPACES ID JUST_SPACES '(' WHITESPACE_ANY VAR_LIST* ')')> */
 		func() bool {
 			position106, tokenIndex106 := position, tokenIndex
 			{
@@ -1691,9 +1695,6 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 					goto l108
 				l109:
 					position, tokenIndex = position109, tokenIndex109
-				}
-				if !_rules[ruleWHITESPACE_ANY]() {
-					goto l106
 				}
 				if buffer[position] != rune(')') {
 					goto l106

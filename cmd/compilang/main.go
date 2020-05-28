@@ -45,8 +45,12 @@ func fibonacci(int [n]): int {
     }
 }
 
+func test(int [f, k] string [l]): int {;}
+
+func test2(): void {;}
+
 main
-	{ string [a, z] bool [msg] ;
+	{ string [a, z] bool [msg];
 		if a==b {;}
 		if 1 == -1 {;}
 		if "ahoj" == "cau" {;} else {;}
@@ -57,7 +61,11 @@ main
 		k = var p
 		z = "ahoj"
 		msg = true
+		i = 3
+		call fibonacci(i)
 		print(a)
+		j = call test(i, j, raw)
+		v = call test2()
 		return void
 	}
 endmain
