@@ -6,11 +6,11 @@ import (
 )
 
 func TestGrammarValid(t *testing.T) {
-	testcases := map[string]bool {
-		"cases/case1.txt": true,
-		"cases/case2.txt": true,
-		"cases/case3.txt": false,
-		"cases/case4.txt": false,
+	testcases := map[string]bool{
+		"cases/case1.txt":     true,
+		"cases/case2.txt":     true,
+		"cases/case3.txt":     false,
+		"cases/case4.txt":     false,
 		"cases/fibonacci.txt": true,
 	}
 
@@ -20,8 +20,9 @@ func TestGrammarValid(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	for fileName, isValid := range testcases {
-
+	for f, v := range testcases {
+		fileName := f
+		isValid := v
 		t.Run("test program valid", func(t *testing.T) {
 			content, err := ioutil.ReadFile(fileName)
 			if err != nil {
@@ -34,7 +35,6 @@ func TestGrammarValid(t *testing.T) {
 				if isValid {
 					t.Errorf("valid program parsed as invalid: %s", err.Error())
 				}
-
 			} else if !isValid {
 				t.Errorf("invalid program parsed as valid: %s", fileName)
 			}

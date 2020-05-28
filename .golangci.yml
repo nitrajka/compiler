@@ -40,11 +40,11 @@ linters-settings:
       - opinionated
       - performance
       - style
-    disabled-checks:
-      - wrapperFunc
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
+#    disabled-checks:
+#      - wrapperFunc
+#      - dupImport # https://github.com/go-critic/go-critic/issues/845
+#      - ifElseChain
+#      - octalLiteral
   funlen:
     lines: 100
     statements: 50
@@ -52,47 +52,17 @@ linters-settings:
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
-  enable:
-    - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
-    - dupl
-    - errcheck
-    - funlen
-    - gochecknoinits
-    - goconst
-    - gocritic
-    - gocyclo
-    - gofmt
-    - goimports
-    - golint
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
-    - interfacer
-    - lll
-    - misspell
-    - nakedret
-    - scopelint
-    - staticcheck
-    - structcheck
-    - stylecheck
-    - typecheck
-    - unconvert
-    - unparam
-    - unused
-    - varcheck
-    - whitespace
-
-  # don't enable:
-  # - gochecknoglobals
-  # - gocognit
-  # - godox
-  # - maligned
-  # - prealloc
+  enable-all: true
+  disable:
+  - testpackage
+  - goerr113 # todo: enable in the future
+  - wsl
+  - godox
+#  - gochecknoglobals
+#  - gocognit
+#  - godox
+#  - maligned
+#  - prealloc
 
 run:
   skip-dirs:

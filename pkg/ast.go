@@ -8,7 +8,7 @@ import (
 func (t *tokens32) WalkAndDeleteUnwanted(buffer string) {
 	node := t.AST()
 	node.deleteWhitespace()
-	node.parsePARAMS_VARS()
+	node.parseParamsVars()
 	node.parseFuncCall()
 	node.parseStatements()
 	node.parseIfWhileStatement()
@@ -52,7 +52,7 @@ func (node *node32) deleteWhitespace() {
 	}
 }
 
-func (node *node32) parsePARAMS_VARS() {
+func (node *node32) parseParamsVars() {
 	if node == nil {
 		return
 	}
@@ -71,14 +71,11 @@ func (node *node32) parsePARAMS_VARS() {
 			node.up.up = node.up.next.up
 			node.up.next = nil
 		}
-
-	} else {
-		if node.up != nil {
-			node.up.parsePARAMS_VARS()
-		}
+	} else if node.up != nil {
+		node.up.parseParamsVars()
 	}
 	if node.next != nil {
-		node.next.parsePARAMS_VARS()
+		node.next.parseParamsVars()
 	}
 }
 
@@ -142,8 +139,8 @@ func (node *node32) parseIfWhileStatement() {
 	if node == nil {
 		return
 	}
-	rule := rul3s[node.pegRule]
-	if rule == rul3s[ruleIF_STATEMENT] || rule == rul3s[ruleWHILE_STATEMENT] {
+	switch node.pegRule {
+	case ruleIF_STATEMENT, ruleWHILE_STATEMENT:
 		tmp := node.up.next
 		node.up = node.up.up
 		tmpNode := node.up
@@ -151,7 +148,7 @@ func (node *node32) parseIfWhileStatement() {
 			tmpNode = tmpNode.next
 		}
 		tmpNode.next = tmp
-	} else if rule == rul3s[ruleBOOL_OP] {
+	case ruleBOOL_OP:
 		tmp := node.next.next
 		node.next = node.next.up
 		tmpNode := node.next
@@ -159,7 +156,7 @@ func (node *node32) parseIfWhileStatement() {
 			tmpNode = tmpNode.next
 		}
 		tmpNode.next = tmp
-	} else if rule == rul3s[ruleBOOL_EXPR_VALUE] {
+	case ruleBOOL_EXPR_VALUE:
 		if node.next.next != nil && rul3s[node.next.next.pegRule] != rul3s[ruleELSECLAUSE] {
 			tmp := node.next.next
 			node.next = node.next.up
