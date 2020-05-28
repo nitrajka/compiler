@@ -12,6 +12,7 @@ import (
 func main() {
 	flag.Parse()
 	programFileName := flag.Arg(0)
+
 	if programFileName == "" {
 		exit("provide program file to compile")
 	}
@@ -23,6 +24,7 @@ func main() {
 
 	parser := &lexicalanalyser.MyParser{Buffer: string(content), Pretty: true}
 	err = parser.Init()
+
 	if err != nil {
 		exit(err.Error())
 	}

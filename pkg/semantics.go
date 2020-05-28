@@ -80,7 +80,7 @@ func (node *node32) checkSemantics(buffer string) error {
 		return fmt.Errorf("semantics error: %s", err)
 	}
 
-	if rul3s[tmpNode.pegRule] == rul3s[ruleFUNCTIONS] {
+	if tmpNode.pegRule == ruleFUNCTIONS {
 		functionNode := tmpNode.up
 
 		// declare all functions into global scope
@@ -112,6 +112,7 @@ func (node *node32) checkSemantics(buffer string) error {
 	if err != nil {
 		return fmt.Errorf("semantics error: main function invalid: %s", err)
 	}
+
 	return nil
 }
 
@@ -147,7 +148,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	functionScope.up = scope
 	functionScope.currentFunction = buffer[functionNode.up.begin:functionNode.up.end]
 	body := functionNode.up.next.next.next
-	if rul3s[functionNode.up.next.next.pegRule] == rul3s[ruleBODY] {
+	if functionNode.up.next.next.pegRule == ruleBODY {
 		body = functionNode.up.next.next
 	}
 	if err := body.validateBody(buffer, functionScope, true); err != nil {
@@ -158,10 +159,11 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	//todo: validate print statement
 	//todo: generovanie kodu
 	tmpNode := node.up.next
-	for rul3s[tmpNode.pegRule] == rul3s[rulePARAMS_VARS] {
+	for tmpNode.pegRule == rulePARAMS_VARS {
 		tmpNode = tmpNode.next
 	}
 	funcType := buffer[tmpNode.begin:tmpNode.end]
+
 	return ID{
 		variableKind: Function,
 		name:         buffer[functionNode.up.begin:functionNode.up.end],
@@ -177,14 +179,19 @@ func (node *node32) getParamsVars(buffer string, scope *Scope) (*Scope, *node32,
 	if scope == nil {
 		scope = &Scope{vars: make(map[string]ID)}
 	}
+
 	var paramsOrder []VariableType
+
 	tmpNode := node
+
 	rule := tmpNode.pegRule
 	for rule == rulePARAMS_VARS {
 		typ := buffer[tmpNode.up.begin:tmpNode.up.end]
 		varIDs := tmpNode.up.up.getVarIDs(buffer)
+
 		for _, varID := range varIDs {
 			paramsOrder = append(paramsOrder, stringToVariableType(typ))
+
 			if _, ok := scope.vars[varID]; ok {
 				return nil, node, nil, fmt.Errorf("cannot define same variable ID more times in the same scope: %s", varID)
 			}
@@ -195,6 +202,7 @@ func (node *node32) getParamsVars(buffer string, scope *Scope) (*Scope, *node32,
 		tmpNode = tmpNode.next
 		rule = tmpNode.pegRule
 	}
+
 	return scope, tmpNode, paramsOrder, nil
 }
 
@@ -202,18 +210,21 @@ func (node *node32) getVarIDs(buffer string) []string {
 	if node == nil {
 		return []string{}
 	}
-	tmpNode := node
+
 	var res []string
-	if rul3s[tmpNode.pegRule] == rul3s[ruleID] {
+
+	tmpNode := node
+	if tmpNode.pegRule == ruleID {
 		for tmpNode != nil {
 			res = append(res, buffer[tmpNode.begin:tmpNode.end])
 			tmpNode = tmpNode.next
 		}
 	}
+
 	return res
 }
 
-func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) error {
+func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) error { // nolint // because
 	if node == nil || node.up == nil || node.pegRule != ruleBODY {
 		return nil
 	}
@@ -251,10 +262,10 @@ func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) 
 				if err := statement.up.validateFuncCall(buffer, scope); err != nil {
 					return err
 				}
-				// todo: implement rulePRINT_STATEMENT
 			}
 			statement = statement.next
 		}
+
 		return nil
 	}
 
@@ -272,6 +283,7 @@ func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) 
 			return fmt.Errorf("cannot return %s value in function of type %s, in function %s", retType, funcType, bodyScope.currentFunction)
 		}
 	}
+
 	return nil
 }
 
@@ -306,7 +318,7 @@ func (node *node32) validateAssignment(buffer string, scope *Scope) error {
 		return nil
 	}
 
-	if rul3s[node.pegRule] == rul3s[ruleASSIGNMENT] {
+	if node.pegRule == ruleASSIGNMENT {
 		varType, err := node.up.getValueType(buffer, scope)
 		if err != nil {
 			return fmt.Errorf("cannot determine variable type: %s", err)
@@ -321,26 +333,29 @@ func (node *node32) validateAssignment(buffer string, scope *Scope) error {
 			return fmt.Errorf("cannot assign %s value to %s variable: %s", valueType, varType, buffer[node.begin:node.end])
 		}
 
-		if rul3s[value.up.pegRule] == rul3s[ruleFUNC_CALL] {
+		if value.up.pegRule == ruleFUNC_CALL {
 			return value.up.validateFuncCall(buffer, scope)
 		}
 	}
+
 	return nil
 }
 
 func (node *node32) validateWhileStatement(buffer string, scope *Scope) error {
-	rule := rul3s[node.pegRule]
-	if rule == rul3s[ruleWHILE_STATEMENT] {
-		bodyNode, err := node.up.checkBoolExpression(buffer, scope)
-		if err != nil {
-			return fmt.Errorf("while statement: %s", err)
-		}
-
-		err = bodyNode.validateBody(buffer, scope, false)
-		if err != nil {
-			return fmt.Errorf("while statement: %s", err)
-		}
+	if node == nil || node.pegRule != ruleWHILE_STATEMENT {
+		return nil
 	}
+
+	bodyNode, err := node.up.checkBoolExpression(buffer, scope)
+	if err != nil {
+		return fmt.Errorf("while statement: %s", err)
+	}
+
+	err = bodyNode.validateBody(buffer, scope, false)
+	if err != nil {
+		return fmt.Errorf("while statement: %s", err)
+	}
+
 	return nil
 }
 
@@ -355,6 +370,7 @@ func (node *node32) checkBoolExpression(buffer string, scope *Scope) (*node32, e
 		return node, err
 	}
 	tmp := node.next
+
 	for tmp.pegRule != ruleBODY {
 		if tmp.pegRule == ruleBOOL_EXPR_VALUE {
 			valueType, _ := tmp.up.getValueType(buffer, scope)
@@ -370,8 +386,8 @@ func (node *node32) checkBoolExpression(buffer string, scope *Scope) (*node32, e
 }
 
 func (node *node32) getValueType(buffer string, scope *Scope) (VariableType, error) {
-	switch rul3s[node.pegRule] {
-	case rul3s[ruleID]:
+	switch node.pegRule {
+	case ruleID:
 		tmpScope := scope
 		for tmpScope != nil {
 			typ, isInScope := node.isVarInScope(tmpScope, buffer)
@@ -382,25 +398,27 @@ func (node *node32) getValueType(buffer string, scope *Scope) (VariableType, err
 		}
 
 		return "", fmt.Errorf("variable was not declared before used: %s", buffer[node.begin:node.end])
-	case rul3s[ruleTEXT]:
+	case ruleTEXT:
 		return String, nil
-	case rul3s[ruleINTEGER]:
+	case ruleINTEGER:
 		return Integer, nil
-	case rul3s[ruleINT]:
+	case ruleINT:
 		return Integer, nil
-	case rul3s[ruleBOOLEAN]:
+	case ruleBOOLEAN:
 		return Boolean, nil
-	case rul3s[ruleEXPRESSION]:
+	case ruleEXPRESSION:
 		exprType, err := node.up.validateExpression(buffer, scope)
 		if err != nil {
 			return "", err
 		}
+
 		return exprType, nil
-	case rul3s[ruleFUNC_CALL]:
+	case ruleFUNC_CALL:
 		funcType, err := node.up.getValueType(buffer, scope)
 		if err != nil {
 			return "", err
 		}
+
 		return funcType, nil
 	default:
 		return "", fmt.Errorf("variable was not declared: %s", buffer[node.begin:node.end])
@@ -412,6 +430,7 @@ func (node *node32) isVarInScope(scope *Scope, buffer string) (VariableType, boo
 	if id, ok := scope.vars[variable]; ok {
 		return id.variableType, true
 	}
+
 	return stringToVariableType("unknown"), false
 }
 
@@ -451,15 +470,18 @@ func (node *node32) validateExpression(buffer string, scope *Scope) (VariableTyp
 
 	tmpNode := node.next
 	for tmpNode != nil {
-		if rul3s[tmpNode.pegRule] == rul3s[ruleOP] {
+		if tmpNode.pegRule == ruleOP { // nolint
 			op := buffer[tmpNode.begin:tmpNode.end]
+
 			if typeOfExprValue == Boolean { // ID/func_call can be of type bool
 				return "", fmt.Errorf("operation %s is not defined on boolean value", op)
-			} else if typeOfExprValue == String && (op == "-" || op == "*" || op == "/") {
+			}
+			if typeOfExprValue == String && (op == "-" || op == "*" || op == "/") {
 				return "", fmt.Errorf("operation %s is not defined on string value", op)
 			}
-		} else if rul3s[tmpNode.pegRule] == rul3s[ruleEXPR_VALUE] {
+		} else if tmpNode.pegRule == ruleEXPR_VALUE {
 			nextType, err := tmpNode.up.getValueType(buffer, scope)
+
 			if err != nil {
 				return "", fmt.Errorf("%s", err)
 			}

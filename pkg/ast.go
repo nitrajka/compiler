@@ -71,9 +71,10 @@ func (node *node32) parseParamsVars() {
 			node.up.up = node.up.next.up
 			node.up.next = nil
 		}
-	} else if node.up != nil {
+	} else if node.up != nil { // must have else if
 		node.up.parseParamsVars()
 	}
+
 	if node.next != nil {
 		node.next.parseParamsVars()
 	}
@@ -104,6 +105,7 @@ func (node *node32) parseVarList() {
 	if node == nil {
 		return
 	}
+
 	if rul3s[node.pegRule] == rul3s[ruleVAR_LIST] {
 		if node.up.next != nil {
 			node.up.next = node.up.next.up.up
@@ -139,28 +141,36 @@ func (node *node32) parseIfWhileStatement() {
 	if node == nil {
 		return
 	}
+
 	switch node.pegRule {
 	case ruleIF_STATEMENT, ruleWHILE_STATEMENT:
 		tmp := node.up.next
 		node.up = node.up.up
 		tmpNode := node.up
+
 		for tmpNode.next != nil {
 			tmpNode = tmpNode.next
 		}
+
 		tmpNode.next = tmp
+
 	case ruleBOOL_OP:
 		tmp := node.next.next
 		node.next = node.next.up
 		tmpNode := node.next
+
 		for tmpNode.next != nil {
 			tmpNode = tmpNode.next
 		}
+
 		tmpNode.next = tmp
+
 	case ruleBOOL_EXPR_VALUE:
 		if node.next.next != nil && rul3s[node.next.next.pegRule] != rul3s[ruleELSECLAUSE] {
 			tmp := node.next.next
 			node.next = node.next.up
 			tmpNode := node.next
+
 			if tmpNode != nil {
 				for tmpNode.next != nil {
 					tmpNode = tmpNode.next
@@ -173,6 +183,7 @@ func (node *node32) parseIfWhileStatement() {
 	if node.up != nil {
 		node.up.parseIfWhileStatement()
 	}
+
 	if node.next != nil {
 		node.next.parseIfWhileStatement()
 	}
@@ -182,8 +193,8 @@ func (node *node32) parseStrings() {
 	if node == nil {
 		return
 	}
-	rule := rul3s[node.pegRule]
-	if rule == rul3s[ruleTEXT] {
+
+	if node.pegRule == ruleTEXT {
 		if node.up != nil { // if is empty string, has no STRING child
 			node.begin = node.up.begin
 			node.end = node.up.end
@@ -191,9 +202,11 @@ func (node *node32) parseStrings() {
 			node.up = nil
 		}
 	}
+
 	if node.up != nil {
 		node.up.parseStrings()
 	}
+
 	if node.next != nil {
 		node.next.parseStrings()
 	}
@@ -203,43 +216,38 @@ func (node *node32) parseIntegers() {
 	if node == nil {
 		return
 	}
-	rule := rul3s[node.pegRule]
-	if rule == rul3s[ruleINTEGER] {
+
+	if node.pegRule == ruleINTEGER {
 		node.up = nil
 	}
-	if node.up != nil {
-		node.up.parseIntegers()
-	}
-	if node.next != nil {
-		node.next.parseIntegers()
-	}
+
+	node.up.parseIntegers()
+	node.next.parseIntegers()
 }
 
 func (node *node32) parseAssignment() {
 	if node == nil {
 		return
 	}
+
 	if rul3s[node.pegRule] == rul3s[ruleASSIGNMENT] {
 		value := node.up.next
 		node.up = node.up.up
+
 		if node.up.next != nil { // handle indexing of an array
 			node.up.up = node.up.next.up
 			node.up.next = nil
 		}
 		node.up.next = value
+
 		if value.up.next != nil && rul3s[value.up.next.pegRule] == rul3s[ruleINDEXED] {
 			value.up.up = value.up.next.up.up
 			value.up.next = nil
 		}
 	}
 
-	if node.up != nil {
-		node.up.parseAssignment()
-	}
-
-	if node.next != nil {
-		node.next.parseAssignment()
-	}
+	node.up.parseAssignment()
+	node.next.parseAssignment()
 }
 
 func (node *node32) parseExpression() {
@@ -253,11 +261,6 @@ func (node *node32) parseExpression() {
 		}
 	}
 
-	if node.up != nil {
-		node.up.parseExpression()
-	}
-
-	if node.next != nil {
-		node.next.parseExpression()
-	}
+	node.up.parseExpression()
+	node.next.parseExpression()
 }

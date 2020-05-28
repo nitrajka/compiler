@@ -23,6 +23,7 @@ func TestGrammarValid(t *testing.T) {
 	for f, v := range testcases {
 		fileName := f
 		isValid := v
+
 		t.Run("test program valid", func(t *testing.T) {
 			content, err := ioutil.ReadFile(fileName)
 			if err != nil {

@@ -40,11 +40,6 @@ linters-settings:
       - opinionated
       - performance
       - style
-#    disabled-checks:
-#      - wrapperFunc
-#      - dupImport # https://github.com/go-critic/go-critic/issues/845
-#      - ifElseChain
-#      - octalLiteral
   funlen:
     lines: 100
     statements: 50
@@ -56,13 +51,8 @@ linters:
   disable:
   - testpackage
   - goerr113 # todo: enable in the future
-  - wsl
+#  - wsl
   - godox
-#  - gochecknoglobals
-#  - gocognit
-#  - godox
-#  - maligned
-#  - prealloc
 
 run:
   skip-dirs:
