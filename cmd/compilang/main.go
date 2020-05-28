@@ -28,6 +28,7 @@ func main() {
 	if err != nil {
 		exit(err.Error())
 	}
+
 	if err := parser.Parse(1); err != nil {
 		exit(err.Error())
 	}

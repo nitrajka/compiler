@@ -50,8 +50,7 @@ linters:
   enable-all: true
   disable:
   - testpackage
-  - goerr113 # todo: enable in the future
-#  - wsl
+#  - goerr113 # todo: enable in the future
   - godox
 
 run:

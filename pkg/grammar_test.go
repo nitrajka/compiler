@@ -15,6 +15,7 @@ func TestGrammarValid(t *testing.T) {
 	}
 
 	parser := &MyParser{Pretty: true}
+
 	err := parser.Init()
 	if err != nil {
 		t.Errorf(err.Error())
@@ -32,6 +33,7 @@ func TestGrammarValid(t *testing.T) {
 
 			parser.Buffer = string(content)
 			parser.Reset()
+
 			if err := parser.Parse(1); err != nil {
 				if isValid {
 					t.Errorf("valid program parsed as invalid: %s", err.Error())
