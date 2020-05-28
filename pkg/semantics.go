@@ -6,17 +6,37 @@ import (
 )
 
 type SemanticsError struct {
-	buffer string
-	node *node32
+	buffer  string
+	node    *node32
+	context []string
 }
 
-func (e SemanticsError) Error() string {
+func (e *SemanticsError) Error() string {
 	line := strings.Count(e.buffer[:e.node.begin], "\n") + 1
-	return fmt.Sprintf("semantics error on line %d", line)
+	tmp := fmt.Sprintf("semantics error on line %d", line)
+	msgs := append(e.context, tmp)
+
+	for i := 0; i < len(msgs)/2; i++ {
+		msgs[i], msgs[len(msgs)-i-1] = msgs[len(msgs)-1-i], msgs[i]
+	}
+
+	return strings.Join(msgs, "\n")
 }
 
-func NewSemanticsError(buffer string, node *node32) SemanticsError {
-	return SemanticsError{buffer: buffer, node: node}
+func AddErrorContext(err error, msg string) error {
+	if se, ok := err.(*SemanticsError); ok {
+		return &SemanticsError{buffer: se.buffer, node: se.node, context: append(se.context, msg)}
+	}
+
+	return fmt.Errorf("%s: %w", msg, err)
+}
+
+func NewSemanticsError(buffer string, node *node32) *SemanticsError {
+	return &SemanticsError{buffer: buffer, node: node}
+}
+
+func NewSemanticsErrorf(buffer string, node *node32, format string, values ...interface{}) error {
+	return AddErrorContext(&SemanticsError{buffer: buffer, node: node}, fmt.Sprintf(format, values...))
 }
 
 type VariableKind string
@@ -92,7 +112,7 @@ func stringToBaseValue(typ string) interface{} {
 func (node *node32) checkSemantics(buffer string) error {
 	globalScope, tmpNode, _, err := node.up.getParamsVars(buffer, nil)
 	if err != nil {
-		return fmt.Errorf("semantics error: %s", err)
+		return err
 	}
 
 	if tmpNode.pegRule == ruleFUNCTIONS {
@@ -103,7 +123,6 @@ func (node *node32) checkSemantics(buffer string) error {
 			id, err2 := functionNode.declareFunction(buffer, globalScope)
 			if err2 != nil {
 				return err2
-				//return fmt.Errorf("semantics error: %s", err2)
 			}
 
 			globalScope.vars[buffer[functionNode.up.begin:functionNode.up.end]] = id
@@ -114,12 +133,11 @@ func (node *node32) checkSemantics(buffer string) error {
 		functionNode = tmpNode.up
 		for functionNode != nil {
 			id, err2 := functionNode.validateFunction(buffer, globalScope)
-			globalScope.vars[buffer[functionNode.up.begin:functionNode.up.end]] = id // additionalInfo changes
-
 			if err2 != nil {
-				return fmt.Errorf("semantics error: %s", err2)
+				return err2
 			}
 
+			globalScope.vars[buffer[functionNode.up.begin:functionNode.up.end]] = id // additionalInfo changes
 			functionNode = functionNode.next
 		}
 
@@ -128,35 +146,38 @@ func (node *node32) checkSemantics(buffer string) error {
 
 	// validate main body
 	globalScope.currentFunction = "main"
+	globalScope.vars["main"] = ID{variableKind: Function, variableType: Void, name: "string"} // todo: need additionalInfo??
 	err = tmpNode.validateBody(buffer, globalScope, false)
 
 	if err != nil {
-		return fmt.Errorf("semantics error: main function invalid: %s", err)
+		return AddErrorContext(err, "main function is invalid")
 	}
 
 	return nil
 }
 
 func (node *node32) declareFunction(buffer string, scope *Scope) (ID, error) {
+	funcName := buffer[node.up.begin:node.up.end]
+
 	_, isInScope := node.up.isVarInScope(scope, buffer)
 	if isInScope {
-		return ID{}, fmt.Errorf("function name must be unique: %s", buffer[node.up.begin:node.up.end])
+		return ID{}, NewSemanticsErrorf(buffer, node, "function name must be unique: %s", funcName)
 	}
 
 	functionScope, nodeType, paramsOrder, err := node.up.next.getParamsVars(buffer, nil)
 	if err != nil {
-		return ID{}, fmt.Errorf("function params vars: %s", err)
+		return ID{}, err // "function params vars: %s", err)
 	}
 
 	functionScope.up = scope
-	functionScope.currentFunction = buffer[node.up.begin:node.up.end]
+	functionScope.currentFunction = funcName
 
 	funcType := buffer[nodeType.begin:nodeType.end]
 
 	return ID{
 		variableKind:   Function,
 		variableType:   stringToVariableType(funcType),
-		name:           buffer[node.up.begin:node.up.end],
+		name:           funcName,
 		additionalInfo: Func{paramsVars: functionScope, paramsOrder: paramsOrder, bodyValid: false},
 	}, nil
 }
@@ -166,7 +187,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 
 	functionScope, _, paramsOrder, err := functionNode.up.next.getParamsVars(buffer, nil)
 	if err != nil {
-		return ID{}, fmt.Errorf("function params vars: %s", err)
+		return ID{}, AddErrorContext(err, "function params vars")
 	}
 
 	functionScope.up = scope
@@ -178,7 +199,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	}
 
 	if err := body.validateBody(buffer, functionScope, true); err != nil {
-		return ID{}, fmt.Errorf("%s", err)
+		return ID{}, err
 	}
 	//todo: validate whether function with return type has return statement (only void does not have to have)
 	//todo: 2 unknown vars in assignment (or else), check for unknown
@@ -220,8 +241,8 @@ func (node *node32) getParamsVars(buffer string, scope *Scope) (*Scope, *node32,
 			paramsOrder = append(paramsOrder, stringToVariableType(typ))
 
 			if _, ok := scope.vars[varID]; ok {
-				e := NewSemanticsError(buffer, tmpNode)
-				return nil, node, nil, e // fmt.Errorf("cannot define same variable ID more times in the same scope: %s", varID)
+				return nil, node, nil, NewSemanticsErrorf(buffer, tmpNode,
+					"cannot define same variable ID more times in the same scope: %s", varID)
 			}
 
 			scope.vars[varID] = ID{variableKind: Variable, name: varID, variableType: stringToVariableType(typ),
@@ -300,24 +321,29 @@ func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) 
 
 			statement = statement.next
 		}
-
-		return nil
+		statements = statements.next
 	}
 
-	if statements.pegRule == ruleRETURN_CLAUSE {
+	if statements != nil && statements.pegRule == ruleRETURN_CLAUSE {
 		// validate return - check type of return value with function type
-		retType, err := statements.up.up.getValueType(buffer, bodyScope)
-		if err != nil {
-			return err
+		var retType VariableType
+		if statements.up.up == nil { // func_call's value does not have child if Void
+			retType = Void
+		} else {
+			retType, err = statements.up.up.getValueType(buffer, bodyScope)
+			if err != nil {
+				return err
+			}
 		}
 
 		funcType, isInScope := isVarInScope(bodyScope, bodyScope.currentFunction)
 		if !isInScope {
-			return fmt.Errorf("undefined function: %s", bodyScope.currentFunction)
+			return NewSemanticsErrorf(buffer, node, "undefined function: %s", bodyScope.currentFunction)
 		}
 
 		if funcType != retType {
-			return fmt.Errorf("cannot return %s value in function of type %s, in function %s", retType, funcType, bodyScope.currentFunction)
+			return NewSemanticsErrorf(buffer, node,
+				"cannot return %s value in function of type %s, in function %s", retType, funcType, bodyScope.currentFunction)
 		}
 	}
 
@@ -331,19 +357,19 @@ func (node *node32) validateIfStatement(buffer string, scope *Scope) error {
 
 	bodyNode, err := node.up.checkBoolExpression(buffer, scope)
 	if err != nil {
-		return fmt.Errorf("if statement: %s", err)
+		return AddErrorContext(err, "if statement")
 	}
 
 	err = bodyNode.validateBody(buffer, scope, false)
 	if err != nil {
-		return fmt.Errorf("if statement: %s", err)
+		return AddErrorContext(err, "if statement")
 	}
 
 	// checking else clause
 	if bodyNode.next != nil {
 		err = bodyNode.next.up.validateBody(buffer, scope, false)
 		if err != nil {
-			return fmt.Errorf("if statement: %s", err)
+			return AddErrorContext(err, "if statement")
 		}
 	}
 
@@ -358,18 +384,18 @@ func (node *node32) validateAssignment(buffer string, scope *Scope) error {
 	if node.pegRule == ruleASSIGNMENT {
 		varType, err := node.up.getValueType(buffer, scope)
 		if err != nil {
-			return fmt.Errorf("cannot determine variable type: %s", err)
+			return AddErrorContext(err, "cannot determine variable type")
 		}
 
 		value := node.up.next
 
 		valueType, err := value.up.getValueType(buffer, scope)
 		if err != nil {
-			return fmt.Errorf("could not get type of value: %s", err)
+			return AddErrorContext(err, "could not get type of value")
 		}
 
 		if varType != valueType {
-			return fmt.Errorf("cannot assign %s value to %s variable: %s", valueType, varType, buffer[node.begin:node.end])
+			return NewSemanticsErrorf(buffer, node, "cannot assign %s value to %s variable: %s", valueType, varType, buffer[node.begin:node.end])
 		}
 
 		if value.up.pegRule == ruleFUNC_CALL {
@@ -387,12 +413,12 @@ func (node *node32) validateWhileStatement(buffer string, scope *Scope) error {
 
 	bodyNode, err := node.up.checkBoolExpression(buffer, scope)
 	if err != nil {
-		return fmt.Errorf("while statement: %s", err)
+		return AddErrorContext(err, "while statement")
 	}
 
 	err = bodyNode.validateBody(buffer, scope, false)
 	if err != nil {
-		return fmt.Errorf("while statement: %s", err)
+		return AddErrorContext(err, "while statement")
 	}
 
 	return nil
@@ -415,7 +441,7 @@ func (node *node32) checkBoolExpression(buffer string, scope *Scope) (*node32, e
 		if tmp.pegRule == ruleBOOL_EXPR_VALUE {
 			valueType, _ := tmp.up.getValueType(buffer, scope)
 			if operandType != valueType {
-				return node, fmt.Errorf("cannot compare variables of different types: %s, %s", operandType, valueType)
+				return node, NewSemanticsErrorf(buffer, node, "cannot compare variables of different types: %s, %s", operandType, valueType)
 			}
 		}
 
@@ -438,7 +464,7 @@ func (node *node32) getValueType(buffer string, scope *Scope) (VariableType, err
 			tmpScope = tmpScope.up
 		}
 
-		return "", fmt.Errorf("variable was not declared before used: %s", buffer[node.begin:node.end])
+		return "", NewSemanticsErrorf(buffer, node, "variable was not declared before used: %s", buffer[node.begin:node.end])
 	case ruleTEXT:
 		return String, nil
 	case ruleINTEGER:
@@ -462,7 +488,7 @@ func (node *node32) getValueType(buffer string, scope *Scope) (VariableType, err
 
 		return funcType, nil
 	default:
-		return "", fmt.Errorf("variable was not declared: %s", buffer[node.begin:node.end])
+		return "", NewSemanticsErrorf(buffer, node, "variable was not declared: %s", buffer[node.begin:node.end])
 	}
 }
 
@@ -508,7 +534,7 @@ func (node *node32) validateExpression(buffer string, scope *Scope) (VariableTyp
 
 	typeOfExprValue, err := node.up.getValueType(buffer, scope)
 	if err != nil {
-		return "", fmt.Errorf("%s", err)
+		return "", err
 	}
 
 	tmpNode := node.next
@@ -517,21 +543,21 @@ func (node *node32) validateExpression(buffer string, scope *Scope) (VariableTyp
 			op := buffer[tmpNode.begin:tmpNode.end]
 
 			if typeOfExprValue == Boolean { // ID/func_call can be of type bool
-				return "", fmt.Errorf("operation %s is not defined on boolean value", op)
+				return "", NewSemanticsErrorf(buffer, node, "operation %s is not defined on boolean value", op)
 			}
 
 			if typeOfExprValue == String && (op == "-" || op == "*" || op == "/") {
-				return "", fmt.Errorf("operation %s is not defined on string value", op)
+				return "", NewSemanticsErrorf(buffer, node, "operation %s is not defined on string value", op)
 			}
 		} else if tmpNode.pegRule == ruleEXPR_VALUE {
 			nextType, err := tmpNode.up.getValueType(buffer, scope)
 
 			if err != nil {
-				return "", fmt.Errorf("%s", err)
+				return "", err
 			}
 
 			if nextType != typeOfExprValue {
-				return "", fmt.Errorf("cannot operate on values of different types: %s, %s", typeOfExprValue, nextType)
+				return "", NewSemanticsErrorf(buffer, node, "cannot operate on values of different types: %s, %s", typeOfExprValue, nextType)
 			}
 		}
 
@@ -554,27 +580,27 @@ func (node *node32) validateFuncCall(buffer string, scope *Scope) error {
 
 	id, found := stringToID(scope, funcName)
 	if !found {
-		return fmt.Errorf("function %s not defined before used", funcName)
+		return NewSemanticsErrorf(buffer, node, "function %s not defined before used", funcName)
 	}
 
 	fun, ok := id.additionalInfo.(Func)
 	if !ok {
-		return fmt.Errorf("calling variable in function call: %s", funcName)
+		return NewSemanticsErrorf(buffer, node, "calling variable in function call: %s", funcName)
 	}
 
 	ids := node.up.next.getVarIDs(buffer)
 	if len(ids) != len(fun.paramsOrder) {
-		return fmt.Errorf("inconsistent number of parameters in function call: %s", funcName)
+		return NewSemanticsErrorf(buffer, node, "inconsistent number of parameters in function call: %s", funcName)
 	}
 
 	for i, varType := range fun.paramsOrder {
 		typ, exists := isVarInScope(scope, ids[i])
 		if !exists {
-			return fmt.Errorf("variable in function call %s does not exist: %s", funcName, ids[i])
+			return NewSemanticsErrorf(buffer, node, "variable in function call %s does not exist: %s", funcName, ids[i])
 		}
 
 		if typ != varType {
-			return fmt.Errorf("variable type does not match function parameter type: %s != %s", typ, varType)
+			return NewSemanticsErrorf(buffer, node, "variable type does not match function parameter type: %s != %s", typ, varType)
 		}
 	}
 

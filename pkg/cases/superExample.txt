@@ -5,6 +5,7 @@ globals
 	void [v]
 endglobals
 
+
 func fibonacci(int [n]): int {
 	int [res1, res2];
 	if n <= 0 {; print("invalid input") }
