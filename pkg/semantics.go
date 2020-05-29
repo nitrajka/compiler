@@ -185,24 +185,18 @@ func (node *node32) declareFunction(buffer string, scope *Scope) (ID, error) {
 func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	functionNode := node
 
-	functionScope, _, paramsOrder, err := functionNode.up.next.getParamsVars(buffer, nil)
+	functionScope, functionTypeNode, paramsOrder, err := functionNode.up.next.getParamsVars(buffer, nil)
 	if err != nil {
 		return ID{}, AddErrorContext(err, "function params vars")
 	}
 
 	functionScope.up = scope
 	functionScope.currentFunction = buffer[functionNode.up.begin:functionNode.up.end]
-	body := functionNode.up.next.next.next
-
-	if functionNode.up.next.next.pegRule == ruleBODY {
-		body = functionNode.up.next.next
-	}
+	body := functionTypeNode.next
 
 	if err := body.validateBody(buffer, functionScope, true); err != nil {
 		return ID{}, err
 	}
-	//todo: validate whether function with return type has return statement (only void does not have to have)
-	//todo: 2 unknown vars in assignment (or else), check for unknown
 	//todo: validate print statement
 	//todo: generovanie kodu
 	tmpNode := node.up.next
@@ -275,13 +269,24 @@ func (node *node32) getVarIDs(buffer string) []string {
 	return res
 }
 
-func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) error { // nolint // because
-	if node == nil || node.up == nil || node.pegRule != ruleBODY {
+func (node *node32) validateBody(buffer string, scope *Scope, functionBody bool) error { // nolint // because
+	if node == nil || node.pegRule != ruleBODY {
+		return nil
+	}
+
+	id, exists := stringToID(scope, scope.currentFunction)
+	if !exists || id.variableKind != Function {
+		return NewSemanticsErrorf(buffer, node, "function %s does not exist", scope.currentFunction)
+	}
+	if node.up == nil {
+		if functionBody && id.variableType != Void {
+			return NewSemanticsErrorf(buffer, node, "function %s does not have return statement at the end of its body", scope.currentFunction)
+		}
 		return nil
 	}
 
 	var tmpScope *Scope
-	if mergeScopes {
+	if functionBody { // merge scopes of params and body declarations if in function body
 		tmpScope = scope
 	}
 
@@ -296,7 +301,6 @@ func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) 
 		bodyScope.up = scope
 		bodyScope.currentFunction = scope.currentFunction
 	}
-
 	if statements.pegRule == ruleSTATEMENTS {
 		statement := statements.up
 		for statement != nil && statement.pegRule == ruleSTATEMENT {
@@ -318,12 +322,18 @@ func (node *node32) validateBody(buffer string, scope *Scope, mergeScopes bool) 
 					return err
 				}
 			}
-
 			statement = statement.next
 		}
 		statements = statements.next
 	}
 
+	id, exists = stringToID(scope, scope.currentFunction)
+	if !exists || id.variableKind != Function {
+		return NewSemanticsErrorf(buffer, statements, "function %s does not exist", scope.currentFunction)
+	}
+	if functionBody && id.variableType != Void && statements == nil {
+		return NewSemanticsErrorf(buffer, node, "function %s does not have return at the end of body", scope.currentFunction)
+	}
 	if statements != nil && statements.pegRule == ruleRETURN_CLAUSE {
 		// validate return - check type of return value with function type
 		var retType VariableType

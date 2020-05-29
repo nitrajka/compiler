@@ -18,9 +18,10 @@ func fibonacci(int [n]): int {
 		res2 = call fibonacci(p)
 		return res1 + res2
     }
+    return 0
 }
 
-func test(int [f, k] string [l]): int {;}
+func test(int [f, k] string [l]): int {; return 0}
 
 func test2(): void {;}
 
