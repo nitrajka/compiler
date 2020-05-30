@@ -76,11 +76,18 @@ func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
 
 func (node *node32) generateBody(buffer string, s *jen.Statement) {
 	if node.pegRule == ruleBODY {
+		statementsAst := node.up
+		statement := statementsAst.up
+		var value *node32
+		if statement.up.pegRule == rulePRINT_STATEMENT {
+			value = statement.up.up.up
+		}
+
 		//var statementsToBlock []*jen.Statement
 		//tmpNode := node.generateParamsVars()
 		var statements []*jen.Statement
 
-		statements = append(statements, jen.Qual("fmt", "Println").Call(jen.Lit("Hello world!")))
+		statements = append(statements, jen.Qual("fmt", "Println").Call(jen.Lit(buffer[value.begin:value.end])))
 
 		var code []jen.Code
 		for _, s := range statements {
