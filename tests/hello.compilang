@@ -1,0 +1,8 @@
+globals
+endglobals
+
+main
+	{ ; print("Hello!")
+		return void
+	}
+endmain

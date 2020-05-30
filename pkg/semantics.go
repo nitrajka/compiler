@@ -109,7 +109,7 @@ func stringToBaseValue(typ string) interface{} {
 	}
 }
 
-func (node *node32) checkSemantics(buffer string) error {
+func (node *node32) CheckSemantics(buffer string) error {
 	globalScope, tmpNode, _, err := node.up.getParamsVars(buffer, nil)
 	if err != nil {
 		return err
@@ -198,6 +198,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 		return ID{}, err
 	}
 	//todo: validate print statement
+	//todo: void global variables unnecessary (check and throw error?) + functions of void type cannot assign
 	//todo: generovanie kodu
 	tmpNode := node.up.next
 	for tmpNode.pegRule == rulePARAMS_VARS {

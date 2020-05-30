@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	output := flag.String("o", "a.go", "Output for compiler")
 	flag.Parse()
 	programFileName := flag.Arg(0)
 
@@ -33,7 +34,21 @@ func main() {
 		exit(err.Error())
 	}
 
-	parser.WalkAndDeleteUnwanted(string(content))
+	root := parser.ParseAST(string(content))
+	//fmt.Println("OK: ast preparsed")
+	err2 := root.CheckSemantics(string(content))
+	if err2 != nil {
+		fmt.Println("FAIL: code semantics")
+		exit(err2.Error())
+	}
+	//fmt.Println("OK: code semantics")
+
+	err3 := root.Generate(string(content), *output)
+	if err3 != nil {
+		fmt.Println("FAIL: code generating")
+		exit(err3.Error())
+	}
+	//fmt.Println("OK: code generated")
 }
 
 func exit(err string) {

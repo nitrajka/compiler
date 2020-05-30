@@ -1,12 +1,8 @@
 package lexicalanalyser
 
-import (
-	"fmt"
-	"os"
-)
-
-func (t *tokens32) WalkAndDeleteUnwanted(buffer string) {
+func (t *tokens32) ParseAST(buffer string) *node32 {
 	node := t.AST()
+	// do not reshuffle parsing functions, some rely that the AST was already preprocessed by the previous ones
 	node.deleteWhitespace()
 	node.parseParamsVars()
 	node.parseFuncCall()
@@ -16,14 +12,8 @@ func (t *tokens32) WalkAndDeleteUnwanted(buffer string) {
 	node.parseIntegers()
 	node.parseAssignment()
 	node.parseExpression()
-	node.PrettyPrint(os.Stdout, buffer)
 
-	err := node.checkSemantics(buffer)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println("program ok")
-	}
+	return node
 }
 
 func isWhitespace(rule pegRule) bool {
