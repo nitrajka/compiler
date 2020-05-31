@@ -1,0 +1,60 @@
+globals
+endglobals
+
+main {int [i, j];
+	i = 1
+	j = 5
+
+	print("i:")
+	print(var i)
+	print("j:")
+	print(var j)
+	if i < j {;
+		print("i < j")
+	} else {;
+		if i == j {;
+			print("i == j")
+		} else {;
+			print("i > j")
+		}
+	}
+	print("---------")
+
+	i = 7
+	j = 5
+
+	print("i:")
+	print(var i)
+	print("j:")
+	print(var j)
+	if i < j {;
+		print("i < j")
+	} else {;
+		if i == j {;
+			print("i == j")
+		} else {;
+			print("i > j")
+		}
+	}
+	print("---------")
+
+	i = 5
+	j = 5
+
+	print("i:")
+	print(var i)
+	print("j:")
+	print(var j)
+	if i < j {;
+		print("i < j")
+	} else {;
+		if i == j {;
+			print("i == j")
+		} else {;
+			print("i > j")
+		}
+	}
+
+	return void
+}
+endmain

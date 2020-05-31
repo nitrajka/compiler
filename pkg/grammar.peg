@@ -70,7 +70,7 @@ INTEGER <- INT / '-' INT
 BOOLEAN <- 'true' / 'false'
 TEXT <- '"' STRING '"'
 STRING <- CHARS_IN_STRING*
-CHARS_IN_STRING <- ' ' / '!' / '#' / '$' / '%' / '&' / '(' / ')' / '*' / '+' / '-' / ',' / '.' / ':' / ';' / '?' / [0-9] / [a-z] / [A-Z] / '-'
+CHARS_IN_STRING <- ' ' / '!' / '#' / '$' / '%' / '&' / '(' / ')' / '*' / '+' / '-' / '<' / '>' / '=' / ',' / '.' / ':' / ';' / '?' / [0-9] / [a-z] / [A-Z]
 INT <- [0-9]+
 
 ARRAY <- '[]' TYPE '[' WHITESPACE_ANY ARRAY_CONTENT WHITESPACE_ANY ']'

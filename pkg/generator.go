@@ -90,7 +90,6 @@ func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
 func (node *node32) generateBody(buffer string, s *jen.Statement) {
 	if node.pegRule == ruleBODY {
 		statementsAst, p := node.up.generateParamsVars(buffer)
-		fmt.Println(p)
 		statement := statementsAst.up
 		var statements []*jen.Statement
 
@@ -101,14 +100,18 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 				generatedValue := value.generateOperand(buffer)
 				statements = append(statements, jen.Qual("fmt", "Println").Call(generatedValue))
 			} else if statement.up.pegRule == ruleIF_STATEMENT {
-
-			} else if statement.up.pegRule == ruleWHILE_STATEMENT {
 				boolExpr, body := statement.up.up.getBoolExprValue(buffer)
-				body.generateBody(buffer, jen.For(boolExpr...))
+				k := jen.If(boolExpr...)
+				body.generateBody(buffer, k)
+				if body.next != nil { // elseclause exists
+					body.next.up.generateBody(buffer, k.Else())
+				}
+				statements = append(statements, k)
+			} else if statement.up.pegRule == ruleWHILE_STATEMENT {
+				//boolExpr, body := statement.up.up.getBoolExprValue(buffer)
+				//body.generateBody(buffer, jen.For(boolExpr...))
 			} else if statement.up.pegRule == ruleASSIGNMENT {
 				value := statement.up.up.next
-
-
 				if value.up.pegRule == ruleEXPRESSION {
 					generatedValue := value.up.getExprValue(buffer)
 					statements = append(statements, statement.up.up.generateOperand(buffer).Op("=").Add(generatedValue...))
