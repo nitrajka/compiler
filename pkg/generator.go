@@ -11,6 +11,9 @@ func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
 
 	//todo: unused variables
+	//todo implement 1 variable expressions (if a, if a < b)
+	//todo: implement &&, ||
+	//todo: print(i) is invalid
 
 	f := jen.NewFile("main")
 
@@ -108,8 +111,10 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 				}
 				statements = append(statements, k)
 			} else if statement.up.pegRule == ruleWHILE_STATEMENT {
-				//boolExpr, body := statement.up.up.getBoolExprValue(buffer)
-				//body.generateBody(buffer, jen.For(boolExpr...))
+				boolExpr, body := statement.up.up.getBoolExprValue(buffer)
+				k := jen.For(boolExpr...)
+				body.generateBody(buffer, k)
+				statements = append(statements, k)
 			} else if statement.up.pegRule == ruleASSIGNMENT {
 				value := statement.up.up.next
 				if value.up.pegRule == ruleEXPRESSION {
@@ -188,7 +193,10 @@ func (node *node32) getBoolExprValue(buffer string) ([]jen.Code, *node32) {
 						} else {
 							res = append(res, leftOp.Op(op).False())
 						}
-					} else if tmpNode.up.pegRule == ruleINTEGER || tmpNode.up.pegRule == ruleTEXT {
+					} else if tmpNode.up.pegRule == ruleINTEGER {
+						num, _ := strconv.Atoi(buffer[tmpNode.up.begin:tmpNode.up.end])
+						res = append(res, leftOp.Op(op).Lit(num))
+					} else if tmpNode.up.pegRule == ruleTEXT {
 						res = append(res, leftOp.Op(op).Lit(buffer[tmpNode.up.begin:tmpNode.up.end]))
 					}
 					leftOp = tmpNode.up.generateOperand(buffer)

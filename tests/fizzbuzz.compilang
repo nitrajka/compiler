@@ -16,7 +16,7 @@ main {int [i, n, k, p];
 			if p == 0 {;
             	print("buzz")
             } else {;
-            	print(i)
+            	print(var i)
             }
 		}
 
