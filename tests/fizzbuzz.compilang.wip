@@ -1,0 +1,27 @@
+globals
+endglobals
+
+main {int [i, n, k, p];
+	n = 16
+	while i < n {;
+		k = i % 3
+		p = i % 5
+		if k == 0 {;
+			if p == 0 {;
+            	print("fizz buzz")
+            } else {;
+				print("fizz")
+			}
+		} else {;
+			if p == 0 {;
+            	print("buzz")
+            } else {;
+            	print(i)
+            }
+		}
+
+		i = i+1
+	}
+
+}
+endmain

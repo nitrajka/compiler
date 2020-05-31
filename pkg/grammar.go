@@ -1800,6 +1800,11 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 					position121 := position
 					{
 						switch buffer[position] {
+						case '%':
+							if buffer[position] != rune('%') {
+								goto l119
+							}
+							position++
 						case '/':
 							if buffer[position] != rune('/') {
 								goto l119
@@ -1848,7 +1853,7 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 			position, tokenIndex = position119, tokenIndex119
 			return false
 		},
-		/* 27 OP <- <((&('/') '/') | (&('*') '*') | (&('-') '-') | (&('+') '+'))> */
+		/* 27 OP <- <((&('%') '%') | (&('/') '/') | (&('*') '*') | (&('-') '-') | (&('+') '+'))> */
 		nil,
 		/* 28 ASSIGNABLE <- <(('a' 'r' 'r' AT_LEAST_ONE_SPACE ID '[' INDEXABLE ']') / ID)> */
 		nil,

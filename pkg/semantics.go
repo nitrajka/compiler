@@ -311,7 +311,7 @@ func (node *node32) validateBody(buffer string, scope *Scope, functionBody bool)
 					return err
 				}
 			case ruleWHILE_STATEMENT:
-				if err := statement.up.validateWhileStatement(buffer, scope); err != nil {
+				if err := statement.up.validateWhileStatement(buffer, bodyScope); err != nil {
 					return err
 				}
 			case ruleASSIGNMENT:
@@ -319,7 +319,7 @@ func (node *node32) validateBody(buffer string, scope *Scope, functionBody bool)
 					return err
 				}
 			case ruleFUNC_CALL: // lebo viem modifikovat globalne premenne
-				if err := statement.up.validateFuncCall(buffer, scope); err != nil {
+				if err := statement.up.validateFuncCall(buffer, bodyScope); err != nil {
 					return err
 				}
 			}
@@ -557,7 +557,7 @@ func (node *node32) validateExpression(buffer string, scope *Scope) (VariableTyp
 				return "", NewSemanticsErrorf(buffer, node, "operation %s is not defined on boolean value", op)
 			}
 
-			if typeOfExprValue == String && (op == "-" || op == "*" || op == "/") {
+			if typeOfExprValue == String && (op == "-" || op == "*" || op == "/" || op == "%") {
 				return "", NewSemanticsErrorf(buffer, node, "operation %s is not defined on string value", op)
 			}
 		} else if tmpNode.pegRule == ruleEXPR_VALUE {
@@ -575,6 +575,7 @@ func (node *node32) validateExpression(buffer string, scope *Scope) (VariableTyp
 		tmpNode = tmpNode.next
 	}
 	// FUNC_CALL / TEXT / INTEGER / ID -> (ID/ func_call moze mat typ bool)
+	// %: s%s, b%b
 	// +: b+b
 	// *: s*s, b*b
 	// -: s-s, b-b

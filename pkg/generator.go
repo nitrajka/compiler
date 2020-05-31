@@ -11,9 +11,12 @@ func (node *node32) Generate(buffer string, to string) error {
 
 	f := jen.NewFile("main")
 
-	tmpNode := node.generateParamsVars(buffer, f)
+	tmpNode, paramsVars := node.up.generateParamsVars(buffer)
+	for _, paramVar := range paramsVars {
+		f.Var().Add(paramVar.name, paramVar.typ)
+	}
 
-	tmpNode = tmpNode.generateFunctions(buffer, f)
+	//tmpNode = tmpNode.generateFunctions(buffer, f)
 
 	tmpNode.generateBody(buffer, f.Func().Id("main").Params())
 
@@ -31,30 +34,37 @@ func (node *node32) Generate(buffer string, to string) error {
 	return nil
 }
 
-func (node *node32) generateParamsVars(buffer string, f *jen.File) *node32 {
-	tmpNode := node.up
+type vr struct {
+	name *jen.Statement
+	typ *jen.Statement
+}
+
+func (node *node32) generateParamsVars(buffer string) (*node32, []vr) {
+	tmpNode := node
+	var res []vr
 	for tmpNode.pegRule == rulePARAMS_VARS {
 
 		tmpId := tmpNode.up.up
 		for tmpId != nil {
-			defineVariable(buffer[tmpNode.up.begin:tmpNode.up.end], buffer[tmpId.begin:tmpId.end], f)
+			res = append(res, vr{name: jen.Id(buffer[tmpId.begin:tmpId.end]), typ: defineVariable(buffer[tmpNode.up.begin:tmpNode.up.end]) })
 			tmpId = tmpId.next
 		}
 
 		tmpNode = tmpNode.next
 	}
-	return tmpNode
+	return tmpNode, res
 }
 
-func defineVariable(typ string, name string, f *jen.File) {
+func defineVariable(typ string) *jen.Statement {
 	switch stringToVariableType(typ) {
 	case String:
-		f.Var().Id(name).String()
+		return jen.String()
 	case Integer:
-		f.Var().Id(name).Int()
+		return jen.Int()
 	case Boolean:
-		f.Var().Id(name).Bool()
+		return jen.Bool()
 	}
+	return nil
 }
 
 func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
@@ -76,27 +86,95 @@ func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
 
 func (node *node32) generateBody(buffer string, s *jen.Statement) {
 	if node.pegRule == ruleBODY {
-		statementsAst := node.up
+		statementsAst, p := node.up.generateParamsVars(buffer)
+		fmt.Println(p)
 		statement := statementsAst.up
+		var statements []*jen.Statement
+
 		var value *node32
-		if statement.up.pegRule == rulePRINT_STATEMENT {
-			value = statement.up.up.up
+		for statement != nil {
+			if statement.up.pegRule == rulePRINT_STATEMENT {
+				value = statement.up.up.up
+				statements = append(statements, jen.Qual("fmt", "Println").Call(jen.Lit(buffer[value.begin:value.end])))
+			} else if statement.up.pegRule == ruleIF_STATEMENT {
+
+			} else if statement.up.pegRule == ruleWHILE_STATEMENT {
+				boolExpr, body := statement.up.up.getBoolExprValue(buffer)
+				body.generateBody(buffer, jen.For(boolExpr...))
+			}
+			statement = statement.next
 		}
 
 		//var statementsToBlock []*jen.Statement
 		//tmpNode := node.generateParamsVars()
-		var statements []*jen.Statement
 
-		statements = append(statements, jen.Qual("fmt", "Println").Call(jen.Lit(buffer[value.begin:value.end])))
 
 		var code []jen.Code
+		//for _, paramVar := range paramsVars {
+		//	s.Var().Add(paramVar.name, paramVar.typ)
+		//}
 		for _, s := range statements {
 			code = append(code, s)
 		}
 		s.Block(code...)
-
 		//f.Func().Id(funcName).Params().Block(
 		//	jen.Qual("fmt", "Println").Call(jen.Lit("Hello, world")),
 		//)
 	}
+
+}
+
+func (node *node32) getBoolExprValue(buffer string) ([]jen.Code, *node32) {
+	var res []jen.Code
+	tmpNode := node
+
+	if node.pegRule == ruleBOOL_EXPR_VALUE {
+		var leftOp *jen.Statement
+		var op string
+		for tmpNode != nil && tmpNode.pegRule == ruleBOOL_EXPR_VALUE || tmpNode.pegRule == ruleBOOL_OP {
+			if tmpNode.pegRule == ruleBOOL_EXPR_VALUE {
+				if leftOp != nil { // standing on right operand -> generate operation
+
+					if tmpNode.up.pegRule == ruleID {
+						res = append(res, leftOp.Op(op).Id(buffer[tmpNode.up.begin:tmpNode.up.end]))
+					} else if tmpNode.up.pegRule == ruleBOOLEAN {
+						if buffer[tmpNode.up.begin:tmpNode.up.end] == "true" {
+							res = append(res, leftOp.Op(op).True())
+						} else {
+							res = append(res, leftOp.Op(op).False())
+						}
+					} else if tmpNode.up.pegRule == ruleINTEGER || tmpNode.up.pegRule == ruleTEXT {
+						res = append(res, leftOp.Op(op).Lit(buffer[tmpNode.up.begin:tmpNode.up.end]))
+					}
+					leftOp = tmpNode.up.generateOperand(buffer)
+				} else {
+					leftOp = tmpNode.up.generateOperand(buffer)
+				}
+			} else if tmpNode.pegRule == ruleBOOL_OP {
+				op = buffer[tmpNode.begin:tmpNode.end]
+			}
+			tmpNode = tmpNode.next
+		}
+	}
+	return res, tmpNode
+}
+
+func (node *node32) generateOperand(buffer string) *jen.Statement {
+	if node.pegRule == ruleID {
+		return jen.Id(buffer[node.begin:node.end])
+	} else if node.pegRule == ruleBOOLEAN {
+		return node.generateBool(buffer[node.begin:node.end])
+	} else if node.pegRule == ruleINTEGER {
+		return jen.Lit(buffer[node.begin:node.end])
+	} else if node.pegRule == ruleTEXT {
+		return jen.Lit(buffer[node.begin:node.end])
+	}
+	return nil
+}
+
+func (node *node32) generateBool(bl string) *jen.Statement {
+	if bl == "true" {
+		return jen.True()
+	}
+	return jen.False()
 }
