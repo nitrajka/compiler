@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"os"
+	"strconv"
 )
 
 func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
+
+	//todo: unused variables
 
 	f := jen.NewFile("main")
 
@@ -95,12 +98,25 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 		for statement != nil {
 			if statement.up.pegRule == rulePRINT_STATEMENT {
 				value = statement.up.up.up
-				statements = append(statements, jen.Qual("fmt", "Println").Call(jen.Lit(buffer[value.begin:value.end])))
+				generatedValue := value.generateOperand(buffer)
+				statements = append(statements, jen.Qual("fmt", "Println").Call(generatedValue))
 			} else if statement.up.pegRule == ruleIF_STATEMENT {
 
 			} else if statement.up.pegRule == ruleWHILE_STATEMENT {
 				boolExpr, body := statement.up.up.getBoolExprValue(buffer)
 				body.generateBody(buffer, jen.For(boolExpr...))
+			} else if statement.up.pegRule == ruleASSIGNMENT {
+				value := statement.up.up.next
+
+
+				if value.up.pegRule == ruleEXPRESSION {
+					generatedValue := value.up.getExprValue(buffer)
+					statements = append(statements, statement.up.up.generateOperand(buffer).Op("=").Add(generatedValue...))
+				} else {
+					generatedValue := value.up.generateOperand(buffer)
+					statements = append(statements, statement.up.up.generateOperand(buffer).Op("=").Add(generatedValue))
+				}
+
 			}
 			statement = statement.next
 		}
@@ -110,9 +126,9 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 
 
 		var code []jen.Code
-		//for _, paramVar := range paramsVars {
-		//	s.Var().Add(paramVar.name, paramVar.typ)
-		//}
+		for _, paramVar := range p {
+			code = append(code, jen.Var().Add(paramVar.name, paramVar.typ))
+		}
 		for _, s := range statements {
 			code = append(code, s)
 		}
@@ -124,6 +140,32 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 
 }
 
+func (node *node32) getExprValue(buffer string) []jen.Code {
+	var res []jen.Code
+
+	if node.pegRule == ruleEXPRESSION {
+		var leftOp *jen.Statement
+		var op string
+		tmpNode := node.up
+		for tmpNode != nil && (tmpNode.pegRule == ruleEXPR_VALUE || tmpNode.pegRule == ruleOP) {
+			if tmpNode.pegRule == ruleEXPR_VALUE {
+				if leftOp == nil {
+					leftOp = tmpNode.up.generateOperand(buffer)
+				} else {
+					right := tmpNode.up.generateOperand(buffer)
+					res = append(res, leftOp.Op(op).Add(right) )
+					leftOp = right
+				}
+			} else if tmpNode.pegRule == ruleOP {
+				op = buffer[tmpNode.begin:tmpNode.end]
+			}
+			tmpNode = tmpNode.next
+		}
+	}
+
+	return res
+}
+
 func (node *node32) getBoolExprValue(buffer string) ([]jen.Code, *node32) {
 	var res []jen.Code
 	tmpNode := node
@@ -131,7 +173,7 @@ func (node *node32) getBoolExprValue(buffer string) ([]jen.Code, *node32) {
 	if node.pegRule == ruleBOOL_EXPR_VALUE {
 		var leftOp *jen.Statement
 		var op string
-		for tmpNode != nil && tmpNode.pegRule == ruleBOOL_EXPR_VALUE || tmpNode.pegRule == ruleBOOL_OP {
+		for tmpNode != nil && (tmpNode.pegRule == ruleBOOL_EXPR_VALUE || tmpNode.pegRule == ruleBOOL_OP) {
 			if tmpNode.pegRule == ruleBOOL_EXPR_VALUE {
 				if leftOp != nil { // standing on right operand -> generate operation
 
@@ -165,7 +207,8 @@ func (node *node32) generateOperand(buffer string) *jen.Statement {
 	} else if node.pegRule == ruleBOOLEAN {
 		return node.generateBool(buffer[node.begin:node.end])
 	} else if node.pegRule == ruleINTEGER {
-		return jen.Lit(buffer[node.begin:node.end])
+		num, _ := strconv.Atoi(buffer[node.begin:node.end])
+		return jen.Lit(num)
 	} else if node.pegRule == ruleTEXT {
 		return jen.Lit(buffer[node.begin:node.end])
 	}
