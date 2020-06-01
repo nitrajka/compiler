@@ -1,0 +1,54 @@
+globals
+	int [m]
+endglobals
+
+func min3(int [a, b, c]): int { int [i];
+	i = call min(b, c)
+	return call min(a, i)
+}
+
+func changeMin(int [a, b]): void {;
+	if a < b {;
+		m = var a
+		return void
+	}
+
+	m = var b
+}
+
+func min(int [a, b]): int {;
+	if a < b {;
+		return var a
+	}
+
+	return var b
+}
+
+main {int [a, b, c, minimal];
+	a = 3
+	b = 4
+	minimal = call min(a, b)
+	print(var minimal)
+
+	a = 4
+	b = 3
+	minimal = call min(a, b)
+	print(var minimal)
+
+	a = 3
+    b = 3
+    minimal = call min(a, b)
+    print(var minimal)
+
+    a = 22
+    b = 33
+    c = 44
+    minimal = call min3(a, b, c)
+    print(var minimal)
+
+	a = 5
+	b = 6
+    call changeMin(a, b)
+    print(var m)
+}
+endmain

@@ -11,9 +11,7 @@ func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
 
 	//todo: unused variables
-	//todo implement 1 variable expressions (if a, if a < b)
-	//todo: implement &&, ||
-	//todo: print(i) is invalid
+	//todo implement 1 variable bool expressions (if a {;}, if a < b)
 
 	f := jen.NewFile("main")
 
@@ -22,7 +20,7 @@ func (node *node32) Generate(buffer string, to string) error {
 		f.Var().Add(paramVar.name, paramVar.typ)
 	}
 
-	//tmpNode = tmpNode.generateFunctions(buffer, f)
+	tmpNode = tmpNode.generateFunctions(buffer, f)
 
 	tmpNode.generateBody(buffer, f.Func().Id("main").Params())
 
@@ -79,10 +77,17 @@ func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
 
 		tmpFunction := tmpNode.up
 		for tmpFunction != nil {
-			//todo: generate function
-			//tmpStatements := tmpFunction.up.generateParamsVars()
-			//f.Func().Id(buffer[tmpFunction.up.begin:tmpFunction.up.end]).Block()
-			tmpFunction.generateBody(buffer, f.Func().Id("a").Params())
+			funcName := buffer[tmpFunction.up.begin:tmpFunction.up.end]
+			typ, params := tmpFunction.up.next.generateParamsVars(buffer)
+			var tmpParams []jen.Code
+			for _, p := range params {
+				tmpParams = append(tmpParams, p.name.Add(p.typ))
+			}
+			typeStmnt := defineVariable(buffer[typ.begin:typ.end])
+			fu := jen.Func().Id(funcName).Params(tmpParams...).Add(typeStmnt)
+
+			typ.next.generateBody(buffer, fu)
+			f.Add(fu)
 			tmpFunction = tmpFunction.next
 		}
 		tmpNode = tmpNode.next
@@ -97,41 +102,81 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 		var statements []*jen.Statement
 
 		var value *node32
-		for statement != nil {
-			if statement.up.pegRule == rulePRINT_STATEMENT {
-				value = statement.up.up.up
-				generatedValue := value.generateOperand(buffer)
-				statements = append(statements, jen.Qual("fmt", "Println").Call(generatedValue))
-			} else if statement.up.pegRule == ruleIF_STATEMENT {
-				boolExpr, body := statement.up.up.getBoolExprValue(buffer)
-				k := jen.If(boolExpr...)
-				body.generateBody(buffer, k)
-				if body.next != nil { // elseclause exists
-					body.next.up.generateBody(buffer, k.Else())
-				}
-				statements = append(statements, k)
-			} else if statement.up.pegRule == ruleWHILE_STATEMENT {
-				boolExpr, body := statement.up.up.getBoolExprValue(buffer)
-				k := jen.For(boolExpr...)
-				body.generateBody(buffer, k)
-				statements = append(statements, k)
-			} else if statement.up.pegRule == ruleASSIGNMENT {
-				value := statement.up.up.next
-				if value.up.pegRule == ruleEXPRESSION {
-					generatedValue := value.up.getExprValue(buffer)
-					statements = append(statements, statement.up.up.generateOperand(buffer).Op("=").Add(generatedValue...))
-				} else {
-					generatedValue := value.up.generateOperand(buffer)
-					statements = append(statements, statement.up.up.generateOperand(buffer).Op("=").Add(generatedValue))
-				}
+		if statementsAst.pegRule == ruleSTATEMENTS {
 
+			for statement != nil {
+				if statement.up.pegRule == rulePRINT_STATEMENT {
+					value = statement.up.up.up
+					generatedValue := value.generateOperand(buffer)
+					statements = append(statements, jen.Qual("fmt", "Println").Call(generatedValue))
+				} else if statement.up.pegRule == ruleIF_STATEMENT {
+					boolExpr, body := statement.up.up.getBoolExprValue(buffer)
+					k := jen.If(boolExpr...)
+					body.generateBody(buffer, k)
+					if body.next != nil { // elseclause exists
+						body.next.up.generateBody(buffer, k.Else())
+					}
+					statements = append(statements, k)
+				} else if statement.up.pegRule == ruleWHILE_STATEMENT {
+					boolExpr, body := statement.up.up.getBoolExprValue(buffer)
+					k := jen.For(boolExpr...)
+					body.generateBody(buffer, k)
+					statements = append(statements, k)
+				} else if statement.up.pegRule == ruleASSIGNMENT {
+					value := statement.up.up.next
+					leftSideOfAssignment := statement.up.up.generateOperand(buffer).Op("=")
+					if value.up.pegRule == ruleEXPRESSION {
+						generatedValue := value.up.getExprValue(buffer)
+						statements = append(statements, leftSideOfAssignment.Add(generatedValue...))
+					} else if value.up.pegRule == ruleFUNC_CALL {
+						var params []jen.Code
+						tmpId := value.up.up.next
+						for tmpId != nil {
+							params = append(params, jen.Id(buffer[tmpId.begin:tmpId.end]))
+							tmpId = tmpId.next
+						}
+						statements = append(statements, leftSideOfAssignment.Id(buffer[value.up.up.begin:value.up.up.end]).Call(params...))
+					} else {
+						generatedValue := value.up.generateOperand(buffer)
+						statements = append(statements, leftSideOfAssignment.Add(generatedValue))
+					}
+
+				} else if statement.up.pegRule == ruleFUNC_CALL {
+					var params []jen.Code
+					tmpId := statement.up.up.next
+					for tmpId != nil {
+						params = append(params, jen.Id(buffer[tmpId.begin:tmpId.end]))
+						tmpId = tmpId.next
+					}
+					statements = append(statements, jen.Id(buffer[statement.up.up.begin:statement.up.up.end]).Call(params...))
+				}
+				statement = statement.next
 			}
-			statement = statement.next
+			statementsAst = statementsAst.next
 		}
 
-		//var statementsToBlock []*jen.Statement
-		//tmpNode := node.generateParamsVars()
-
+		if statementsAst != nil && statementsAst.pegRule == ruleRETURN_CLAUSE {
+			value := statementsAst.up
+			if value.up != nil { // is not void
+				if value.up.pegRule == ruleEXPRESSION {
+					code := value.up.up.getExprValue(buffer)
+					statements = append(statements, jen.Return(code...))
+				} else if value.up.pegRule == ruleFUNC_CALL {
+					var params []jen.Code
+					tmpId := value.up.up.next
+					for tmpId != nil {
+						params = append(params, jen.Id(buffer[tmpId.begin:tmpId.end]))
+						tmpId = tmpId.next
+					}
+					statements = append(statements, jen.Return().Id(buffer[value.up.up.begin:value.up.up.end]).Call(params...))
+				} else {
+					stmnt := value.up.generateOperand(buffer)
+					statements = append(statements, jen.Return(stmnt))
+				}
+			} else {
+				statements = append(statements, jen.Return())
+			}
+		}
 
 		var code []jen.Code
 		for _, paramVar := range p {

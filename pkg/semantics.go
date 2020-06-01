@@ -197,7 +197,9 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	if err := body.validateBody(buffer, functionScope, true); err != nil {
 		return ID{}, err
 	}
-	//todo: validate print statement
+	//todo: validate print statement (print(i) is invalid)
+	//todo: implement &&, ||
+	//todo: implement 1 variable bool expressions if a {;}
 	//todo: void global variables unnecessary (check and throw error?) + functions of void type cannot assign
 	//todo: generovanie kodu
 	tmpNode := node.up.next
