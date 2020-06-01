@@ -9,8 +9,7 @@ import (
 
 func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
-
-	//todo: unused variables
+	
 	//todo implement 1 variable bool expressions (if a {;}, if a < b)
 
 	f := jen.NewFile("main")
@@ -22,7 +21,7 @@ func (node *node32) Generate(buffer string, to string) error {
 
 	tmpNode = tmpNode.generateFunctions(buffer, f)
 
-	tmpNode.generateBody(buffer, f.Func().Id("main").Params())
+	tmpNode.generateBody(buffer, f.Func().Id("main").Params(), paramsVars)
 
 	file, err := os.Create(to)
 	if err != nil {
@@ -86,7 +85,7 @@ func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
 			typeStmnt := defineVariable(buffer[typ.begin:typ.end])
 			fu := jen.Func().Id(funcName).Params(tmpParams...).Add(typeStmnt)
 
-			typ.next.generateBody(buffer, fu)
+			typ.next.generateBody(buffer, fu, nil)
 			f.Add(fu)
 			tmpFunction = tmpFunction.next
 		}
@@ -95,7 +94,7 @@ func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
 	return tmpNode
 }
 
-func (node *node32) generateBody(buffer string, s *jen.Statement) {
+func (node *node32) generateBody(buffer string, s *jen.Statement, globalVars []vr) {
 	if node.pegRule == ruleBODY {
 		statementsAst, p := node.up.generateParamsVars(buffer)
 		statement := statementsAst.up
@@ -112,15 +111,15 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 				} else if statement.up.pegRule == ruleIF_STATEMENT {
 					boolExpr, body := statement.up.up.getBoolExprValue(buffer)
 					k := jen.If(boolExpr...)
-					body.generateBody(buffer, k)
+					body.generateBody(buffer, k, nil)
 					if body.next != nil { // elseclause exists
-						body.next.up.generateBody(buffer, k.Else())
+						body.next.up.generateBody(buffer, k.Else(), nil)
 					}
 					statements = append(statements, k)
 				} else if statement.up.pegRule == ruleWHILE_STATEMENT {
 					boolExpr, body := statement.up.up.getBoolExprValue(buffer)
 					k := jen.For(boolExpr...)
-					body.generateBody(buffer, k)
+					body.generateBody(buffer, k, nil)
 					statements = append(statements, k)
 				} else if statement.up.pegRule == ruleASSIGNMENT {
 					value := statement.up.up.next
@@ -181,16 +180,19 @@ func (node *node32) generateBody(buffer string, s *jen.Statement) {
 		var code []jen.Code
 		for _, paramVar := range p {
 			code = append(code, jen.Var().Add(paramVar.name, paramVar.typ))
+			code = append(code, jen.Id("_").Op("=").Add(paramVar.name) )
+		}
+		if globalVars != nil {
+			// _ = varName -> to make sure there is not an unused variable
+			for _, paramVar := range globalVars {
+				code = append(code, jen.Id("_").Op("=").Add(paramVar.name))
+			}
 		}
 		for _, s := range statements {
 			code = append(code, s)
 		}
 		s.Block(code...)
-		//f.Func().Id(funcName).Params().Block(
-		//	jen.Qual("fmt", "Println").Call(jen.Lit("Hello, world")),
-		//)
 	}
-
 }
 
 func (node *node32) getExprValue(buffer string) []jen.Code {
