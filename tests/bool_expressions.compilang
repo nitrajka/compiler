@@ -1,0 +1,61 @@
+globals
+endglobals
+
+main { bool [b] string [a, d, c] int [i, j, k];
+	b = true
+	if b {;
+		print("b is true")
+	}
+
+	a = "hello"
+	d = "hello"
+	c = "hello"
+	if a == d == c {;
+		print("is equal")
+	}
+
+	c = "world"
+	if a == d != c {;
+    	print("hello == hello != world")
+    }
+
+    a = "a"
+    d = "b"
+    c = "c"
+    if a < d < c {;
+    	print("abc")
+    }
+
+    d = "a"
+    if a == d < c {;
+    	print("aac")
+    }
+
+    if a <= d <= c {;
+    	print("aac")
+    }
+
+    d = "d"
+    if c >= a != d == d {;
+    	print("adc")
+    }
+
+	i = 0
+	j = 5
+	k = 10
+    while i <= j <= k {;
+		print("loop")
+		i = i+1
+		k = k-1
+    }
+
+    if 2 < i > 3 {;
+    	print("more than 3")
+    }
+
+    if 10 > i < 10 < 100 < 101 {;
+    	print("less than 10")
+    }
+
+}
+endmain

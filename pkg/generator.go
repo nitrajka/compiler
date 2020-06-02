@@ -10,8 +10,6 @@ import (
 func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
 
-	//todo implement 1 variable bool expressions (if a {;}, if a < b)
-
 	f := jen.NewFile("main")
 
 	tmpNode, paramsVars := node.up.generateParamsVars(buffer)
@@ -225,9 +223,8 @@ func (node *node32) getExprValue(buffer string) []jen.Code {
 			}
 			tmpNode = tmpNode.next
 		}
-		if res == nil {
-			res = append(res, leftOp)
-		}
+
+		res = append(res, leftOp)
 	}
 
 	return res
@@ -240,33 +237,46 @@ func (node *node32) getBoolExprValue(buffer string) ([]jen.Code, *node32) {
 	if node.pegRule == ruleBOOL_EXPR_VALUE {
 		var leftOp *jen.Statement
 		var op string
+		wasOp := false
 		for tmpNode != nil && (tmpNode.pegRule == ruleBOOL_EXPR_VALUE || tmpNode.pegRule == ruleBOOL_OP) {
 			if tmpNode.pegRule == ruleBOOL_EXPR_VALUE {
-				if leftOp != nil { // standing on right operand -> generate operation
+				if leftOp == nil { // standing on right operand -> generate operation
+					leftOp = tmpNode.up.generateOperand(buffer)
+				} else {
+					var tmp *jen.Statement
 
 					if tmpNode.up.pegRule == ruleID {
-						res = append(res, leftOp.Op(op).Id(buffer[tmpNode.up.begin:tmpNode.up.end]))
+						leftOp = leftOp.Id(buffer[tmpNode.up.begin:tmpNode.up.end])
+						tmp = jen.Id(buffer[tmpNode.up.begin:tmpNode.up.end])
 					} else if tmpNode.up.pegRule == ruleBOOLEAN {
 						if buffer[tmpNode.up.begin:tmpNode.up.end] == "true" {
-							res = append(res, leftOp.Op(op).True())
+							leftOp = leftOp.True()
+							tmp = jen.True()
 						} else {
-							res = append(res, leftOp.Op(op).False())
+							leftOp = leftOp.False()
+							tmp = jen.False()
 						}
 					} else if tmpNode.up.pegRule == ruleINTEGER {
 						num, _ := strconv.Atoi(buffer[tmpNode.up.begin:tmpNode.up.end])
-						res = append(res, leftOp.Op(op).Lit(num))
+						leftOp = leftOp.Lit(num)
+						tmp = jen.Lit(num)
 					} else if tmpNode.up.pegRule == ruleTEXT {
-						res = append(res, leftOp.Op(op).Lit(buffer[tmpNode.up.begin:tmpNode.up.end]))
+						leftOp = leftOp.Lit(buffer[tmpNode.up.begin:tmpNode.up.end])
+						tmp = jen.Lit(buffer[tmpNode.up.begin:tmpNode.up.end])
 					}
-					leftOp = tmpNode.up.generateOperand(buffer)
-				} else {
-					leftOp = tmpNode.up.generateOperand(buffer)
+					if wasOp && tmpNode.next != nil && tmpNode.next.pegRule == ruleBOOL_OP {
+						leftOp = leftOp.Op("&&").Add(tmp)
+					}
 				}
 			} else if tmpNode.pegRule == ruleBOOL_OP {
 				op = buffer[tmpNode.begin:tmpNode.end]
+				leftOp = leftOp.Op(op)
+				wasOp = true
+
 			}
 			tmpNode = tmpNode.next
 		}
+		res = append(res, leftOp)
 	}
 	return res, tmpNode
 }
