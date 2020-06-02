@@ -198,7 +198,9 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 		return ID{}, err
 	}
 	//todo: validate print statement (print(i) is invalid), print mus have only 1 parameter, print(void) invalid, print() prints newline
+	// no void type in print or function of type void
 	//todo: implement &&, ||
+	//todo: void call assignment: voidVar = call voidFunction() -> illegal
 	//todo: implement 1 variable bool expressions if a {;}
 	//todo: void global variables unnecessary (check and throw error?) + functions of void type cannot assign
 	//todo: generovanie kodu

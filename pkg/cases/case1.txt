@@ -1,1 +1,0 @@
-globals endglobals main { ; return void } endmain

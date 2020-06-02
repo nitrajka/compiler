@@ -11,7 +11,6 @@ func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
 
 	//todo implement 1 variable bool expressions (if a {;}, if a < b)
-	//todo: parse all values in return + add tests to test return
 
 	f := jen.NewFile("main")
 
@@ -44,6 +43,10 @@ type vr struct {
 }
 
 func (node *node32) generateParamsVars(buffer string) (*node32, []vr) {
+	if node == nil {
+		return node, make([]vr, 0)
+	}
+
 	tmpNode := node
 	var res []vr
 	for tmpNode.pegRule == rulePARAMS_VARS {
@@ -101,12 +104,10 @@ func (node *node32) generateFunctions(buffer string, f *jen.File) *node32 {
 func (node *node32) generateBody(buffer string, s *jen.Statement, globalVars []vr) {
 	if node.pegRule == ruleBODY {
 		statementsAst, p := node.up.generateParamsVars(buffer)
-		statement := statementsAst.up
 		var statements []*jen.Statement
-
 		var value *node32
-		if statementsAst.pegRule == ruleSTATEMENTS {
-
+		if statementsAst != nil && statementsAst.pegRule == ruleSTATEMENTS {
+			statement := statementsAst.up
 			for statement != nil {
 				if statement.up.pegRule == rulePRINT_STATEMENT {
 					if statement.up.up != nil {
@@ -176,11 +177,11 @@ func (node *node32) generateBody(buffer string, s *jen.Statement, globalVars []v
 						tmpId = tmpId.next
 					}
 					statements = append(statements, jen.Return().Id(buffer[value.up.up.begin:value.up.up.end]).Call(params...))
-				} else { //todo: test text, integer, boolean, var id
+				} else {
 					stmnt := value.up.generateOperand(buffer)
 					statements = append(statements, jen.Return(stmnt))
 				}
-			} else { //todo: test void: empty return
+			} else {
 				statements = append(statements, jen.Return())
 			}
 		}
