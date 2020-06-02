@@ -173,7 +173,7 @@ func (node *node32) parseStrings() {
 	}
 
 	if node.pegRule == ruleTEXT {
-		if node.up != nil { // if is empty string, has no STRING child
+		if node.up != nil { // if is non-empty string, has a STRING child
 			node.begin = node.up.begin
 			node.end = node.up.end
 			node.token32 = token32{pegRule: ruleTEXT, begin: node.begin, end: node.end}

@@ -11,9 +11,7 @@ func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
 
 	//todo implement 1 variable bool expressions (if a {;}, if a < b)
-	//todo: call in print (all other values in print)
-	//todo: parse all values in return
-
+	//todo: parse all values in return + add tests to test return
 
 	f := jen.NewFile("main")
 
@@ -52,7 +50,10 @@ func (node *node32) generateParamsVars(buffer string) (*node32, []vr) {
 
 		tmpId := tmpNode.up.up
 		for tmpId != nil {
-			res = append(res, vr{name: jen.Id(buffer[tmpId.begin:tmpId.end]), typ: defineVariable(buffer[tmpNode.up.begin:tmpNode.up.end]) })
+			res = append(res, vr{
+				name: jen.Id(buffer[tmpId.begin:tmpId.end]),
+				typ: defineVariable(buffer[tmpNode.up.begin:tmpNode.up.end]),
+			})
 			tmpId = tmpId.next
 		}
 
@@ -109,8 +110,8 @@ func (node *node32) generateBody(buffer string, s *jen.Statement, globalVars []v
 			for statement != nil {
 				if statement.up.pegRule == rulePRINT_STATEMENT {
 					if statement.up.up != nil {
-						value = statement.up.up.up
-						generatedValue := value.generateOperand(buffer)
+						value = statement.up.up
+						generatedValue := value.up.generateOperand(buffer)
 						statements = append(statements, jen.Qual("fmt", "Println").Call(generatedValue))
 					} else { // empty print, printing newline
 						statements = append(statements, jen.Qual("fmt", "Println").Call())
@@ -223,6 +224,9 @@ func (node *node32) getExprValue(buffer string) []jen.Code {
 			}
 			tmpNode = tmpNode.next
 		}
+		if res == nil {
+			res = append(res, leftOp)
+		}
 	}
 
 	return res
@@ -275,6 +279,9 @@ func (node *node32) generateOperand(buffer string) *jen.Statement {
 		num, _ := strconv.Atoi(buffer[node.begin:node.end])
 		return jen.Lit(num)
 	} else if node.pegRule == ruleTEXT {
+		if buffer[node.begin:node.end] == "\"\"" {
+			return jen.Lit("")
+		}
 		return jen.Lit(buffer[node.begin:node.end])
 	} else if node.pegRule == ruleFUNC_CALL {
 		var params []jen.Code
@@ -284,6 +291,9 @@ func (node *node32) generateOperand(buffer string) *jen.Statement {
 			tmpId = tmpId.next
 		}
 		return jen.Id(buffer[node.up.begin:node.up.end]).Call(params...)
+	} else if node.pegRule == ruleEXPRESSION {
+		code := node.getExprValue(buffer)
+		return jen.Add(code...)
 	}
 	return nil
 }
