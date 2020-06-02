@@ -201,9 +201,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	// no void type in print or function of type void
 	//todo: implement &&, ||
 	//todo: void call assignment: voidVar = call voidFunction() -> illegal
-	//todo: implement 1 variable bool expressions if a {;}
 	//todo: void global variables unnecessary (check and throw error?) + functions of void type cannot assign
-	//todo: generovanie kodu
 	tmpNode := node.up.next
 	for tmpNode.pegRule == rulePARAMS_VARS {
 		tmpNode = tmpNode.next
