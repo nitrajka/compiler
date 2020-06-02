@@ -9,8 +9,11 @@ import (
 
 func (node *node32) Generate(buffer string, to string) error {
 	//node.PrettyPrint(os.Stdout, buffer)
-	
+
 	//todo implement 1 variable bool expressions (if a {;}, if a < b)
+	//todo: call in print (all other values in print)
+	//todo: parse all values in return
+
 
 	f := jen.NewFile("main")
 
@@ -105,9 +108,13 @@ func (node *node32) generateBody(buffer string, s *jen.Statement, globalVars []v
 
 			for statement != nil {
 				if statement.up.pegRule == rulePRINT_STATEMENT {
-					value = statement.up.up.up
-					generatedValue := value.generateOperand(buffer)
-					statements = append(statements, jen.Qual("fmt", "Println").Call(generatedValue))
+					if statement.up.up != nil {
+						value = statement.up.up.up
+						generatedValue := value.generateOperand(buffer)
+						statements = append(statements, jen.Qual("fmt", "Println").Call(generatedValue))
+					} else { // empty print, printing newline
+						statements = append(statements, jen.Qual("fmt", "Println").Call())
+					}
 				} else if statement.up.pegRule == ruleIF_STATEMENT {
 					boolExpr, body := statement.up.up.getBoolExprValue(buffer)
 					k := jen.If(boolExpr...)
@@ -158,7 +165,7 @@ func (node *node32) generateBody(buffer string, s *jen.Statement, globalVars []v
 			value := statementsAst.up
 			if value.up != nil { // is not void
 				if value.up.pegRule == ruleEXPRESSION {
-					code := value.up.up.getExprValue(buffer)
+					code := value.up.getExprValue(buffer)
 					statements = append(statements, jen.Return(code...))
 				} else if value.up.pegRule == ruleFUNC_CALL {
 					var params []jen.Code
@@ -168,11 +175,11 @@ func (node *node32) generateBody(buffer string, s *jen.Statement, globalVars []v
 						tmpId = tmpId.next
 					}
 					statements = append(statements, jen.Return().Id(buffer[value.up.up.begin:value.up.up.end]).Call(params...))
-				} else {
+				} else { //todo: test text, integer, boolean, var id
 					stmnt := value.up.generateOperand(buffer)
 					statements = append(statements, jen.Return(stmnt))
 				}
-			} else {
+			} else { //todo: test void: empty return
 				statements = append(statements, jen.Return())
 			}
 		}
@@ -269,6 +276,14 @@ func (node *node32) generateOperand(buffer string) *jen.Statement {
 		return jen.Lit(num)
 	} else if node.pegRule == ruleTEXT {
 		return jen.Lit(buffer[node.begin:node.end])
+	} else if node.pegRule == ruleFUNC_CALL {
+		var params []jen.Code
+		tmpId := node.up.next
+		for tmpId != nil {
+			params = append(params, jen.Id(buffer[tmpId.begin:tmpId.end]))
+			tmpId = tmpId.next
+		}
+		return jen.Id(buffer[node.up.begin:node.up.end]).Call(params...)
 	}
 	return nil
 }

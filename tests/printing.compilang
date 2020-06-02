@@ -1,0 +1,67 @@
+globals
+endglobals
+
+func min(int [a, b]): int {;
+	if a < b {;
+		return var a
+	}
+
+	return var b
+}
+
+main { int [i, j, k, suma, mini] string [s] bool [b];
+	i = 5
+	j = 6
+	k = -7
+	s = "lorem ipsum"
+	b = true
+
+	print()
+	print("hello")
+	print("")
+	print(2)
+	print(-2)
+	print(0)
+	print(true)
+	print(false)
+	print(var i)
+	print(var s)
+	print(var b)
+	print(var k)
+
+	suma = i+j
+	print(var suma)
+	print(i+j)
+	print(2 + -3)
+	print(2+2)
+
+	print("hello" + " world")
+	print(s + " dolor sit amet...")
+	print(s + s)
+
+	print(call min(i, j))
+
+	print(call min(i, j) + 2)
+	print(call min(i, j) + i)
+
+
+	print(2 - 2)
+	print(2 - -3)
+	print(2 - 0)
+	print(2 - -0)
+
+	print(i * j)
+	print(2*5)
+	print(3 * 6)
+	print(2 * -5)
+	print(2*-5)
+
+	print(4/2)
+	print(6 / 3)
+	print(j/i)
+
+	print(j%i)
+	print(9%9)
+	print(j%3)
+}
+endmain
