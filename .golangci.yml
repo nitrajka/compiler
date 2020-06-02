@@ -52,12 +52,15 @@ linters:
   - testpackage
 #  - goerr113 # todo: enable in the future
   - godox
+  - prealloc
+  - wsl
 
 run:
   skip-dirs:
     - test/testdata_etc
   skip-files:
     - internal/cache/.*_test.go
+    - a.go
 
 issues:
   exclude-rules:

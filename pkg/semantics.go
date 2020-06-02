@@ -281,10 +281,12 @@ func (node *node32) validateBody(buffer string, scope *Scope, functionBody bool)
 	if !exists || id.variableKind != Function {
 		return NewSemanticsErrorf(buffer, node, "function %s does not exist", scope.currentFunction)
 	}
+
 	if node.up == nil {
 		if functionBody && id.variableType != Void {
 			return NewSemanticsErrorf(buffer, node, "function %s does not have return statement at the end of its body", scope.currentFunction)
 		}
+
 		return nil
 	}
 
@@ -304,29 +306,32 @@ func (node *node32) validateBody(buffer string, scope *Scope, functionBody bool)
 		bodyScope.up = scope
 		bodyScope.currentFunction = scope.currentFunction
 	}
+
 	if statements.pegRule == ruleSTATEMENTS {
 		statement := statements.up
 		for statement != nil && statement.pegRule == ruleSTATEMENT {
 			switch statement.up.pegRule {
 			case ruleIF_STATEMENT:
-				if err := statement.up.validateIfStatement(buffer, bodyScope); err != nil {
+				if err2 := statement.up.validateIfStatement(buffer, bodyScope); err2 != nil {
 					return err
 				}
 			case ruleWHILE_STATEMENT:
-				if err := statement.up.validateWhileStatement(buffer, bodyScope); err != nil {
+				if err2 := statement.up.validateWhileStatement(buffer, bodyScope); err2 != nil {
 					return err
 				}
 			case ruleASSIGNMENT:
-				if err := statement.up.validateAssignment(buffer, bodyScope); err != nil {
+				if err2 := statement.up.validateAssignment(buffer, bodyScope); err2 != nil {
 					return err
 				}
 			case ruleFUNC_CALL: // lebo viem modifikovat globalne premenne
-				if err := statement.up.validateFuncCall(buffer, bodyScope); err != nil {
+				if err2 := statement.up.validateFuncCall(buffer, bodyScope); err2 != nil {
 					return err
 				}
 			}
+
 			statement = statement.next
 		}
+
 		statements = statements.next
 	}
 
@@ -334,30 +339,33 @@ func (node *node32) validateBody(buffer string, scope *Scope, functionBody bool)
 	if !exists || id.variableKind != Function {
 		return NewSemanticsErrorf(buffer, statements, "function %s does not exist", scope.currentFunction)
 	}
+
 	if functionBody && id.variableType != Void && statements == nil {
 		return NewSemanticsErrorf(buffer, node, "function %s does not have return at the end of body", scope.currentFunction)
 	}
-	if statements != nil && statements.pegRule == ruleRETURN_CLAUSE {
-		// validate return - check type of return value with function type
-		var retType VariableType
-		if statements.up.up == nil { // func_call's value does not have child if Void
-			retType = Void
-		} else {
-			retType, err = statements.up.up.getValueType(buffer, bodyScope)
-			if err != nil {
-				return err
-			}
-		}
 
-		funcType, isInScope := isVarInScope(bodyScope, bodyScope.currentFunction)
-		if !isInScope {
-			return NewSemanticsErrorf(buffer, node, "undefined function: %s", bodyScope.currentFunction)
+	if statements == nil || statements.pegRule != ruleRETURN_CLAUSE {
+		return nil
+	}
+	// validate return - check type of return value with function type
+	var retType VariableType
+	if statements.up.up == nil { // func_call's value does not have child if Void
+		retType = Void
+	} else {
+		retType, err = statements.up.up.getValueType(buffer, bodyScope)
+		if err != nil {
+			return err
 		}
+	}
 
-		if funcType != retType {
-			return NewSemanticsErrorf(buffer, node,
-				"cannot return %s value in function of type %s, in function %s", retType, funcType, bodyScope.currentFunction)
-		}
+	funcType, isInScope := isVarInScope(bodyScope, bodyScope.currentFunction)
+	if !isInScope {
+		return NewSemanticsErrorf(buffer, node, "undefined function: %s", bodyScope.currentFunction)
+	}
+
+	if funcType != retType {
+		return NewSemanticsErrorf(buffer, node,
+			"cannot return %s value in function of type %s, in function %s", retType, funcType, bodyScope.currentFunction)
 	}
 
 	return nil
