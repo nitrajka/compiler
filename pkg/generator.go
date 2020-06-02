@@ -217,11 +217,11 @@ func (node *node32) getExprValue(buffer string) []jen.Code {
 					leftOp = tmpNode.up.generateOperand(buffer)
 				} else {
 					right := tmpNode.up.generateOperand(buffer)
-					res = append(res, leftOp.Op(op).Add(right) )
-					leftOp = right
+					leftOp = leftOp.Add(right)
 				}
 			} else if tmpNode.pegRule == ruleOP {
 				op = buffer[tmpNode.begin:tmpNode.end]
+				leftOp = leftOp.Op(op)
 			}
 			tmpNode = tmpNode.next
 		}

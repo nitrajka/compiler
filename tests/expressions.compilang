@@ -1,0 +1,26 @@
+globals
+endglobals
+
+
+main {int [i, j] ;
+	i = 1 + 1 + 1 + 1 - 1
+	j = i + 1 + 2
+	print(i)
+	print(j)
+
+	i = i - 1 * 2
+	print(i)
+
+	j = 3 * 3 - 2
+	print(j)
+
+	i = 9 / 3 % 2
+	print(i)
+
+	i = i / j + 7 - 2
+	print(i)
+
+	j = j % i + 10 * 2
+	print(j)
+}
+endmain
