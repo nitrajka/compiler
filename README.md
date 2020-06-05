@@ -2,7 +2,7 @@
 I made up the following grammar and programmed a compiler for it. This is a university project.
 
 ### How to compile
-1. `git clone github.com/nitrajka/compiler`
+1. `git clone git@github.com:nitrajka/compiler.git`
 2. Go to `compiler/cmd/compilang`
 3. Run `go install` 
 4. Write your program in `program.compilang`
