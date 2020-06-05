@@ -198,8 +198,6 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 		return ID{}, err
 	}
 	//todo: implement &&, ||
-	//todo: void call assignment: voidVar = call voidFunction() -> illegal
-	//todo: void global variables unnecessary (check and throw error?) + functions of void type cannot assign
 	tmpNode := node.up.next
 	for tmpNode.pegRule == rulePARAMS_VARS {
 		tmpNode = tmpNode.next
@@ -231,6 +229,9 @@ func (node *node32) getParamsVars(buffer string, scope *Scope) (*Scope, *node32,
 	for rule == rulePARAMS_VARS {
 		typ := buffer[tmpNode.up.begin:tmpNode.up.end]
 		varIDs := tmpNode.up.up.getVarIDs(buffer)
+		if typ == Void {
+			return nil, node, nil, NewSemanticsErrorf(buffer, node, "variable cannot have void type. do not use void type for a variable")
+		}
 
 		for _, varID := range varIDs {
 			paramsOrder = append(paramsOrder, stringToVariableType(typ))
@@ -415,6 +416,11 @@ func (node *node32) validateAssignment(buffer string, scope *Scope) error {
 		valueType, err := value.up.getValueType(buffer, scope)
 		if err != nil {
 			return AddErrorContext(err, "could not get type of value")
+		}
+
+		//reason for this is, that in go assignment of a void function to a variable is invalid
+		if valueType == Void { // it may be function, void, another void variable
+			return NewSemanticsErrorf(buffer, node, "cannot assign void value: %s", buffer[value.up.begin:value.up.end])
 		}
 
 		if varType != valueType {
