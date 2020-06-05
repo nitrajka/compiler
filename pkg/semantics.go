@@ -200,7 +200,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	if err := body.validateBody(buffer, functionScope, true); err != nil {
 		return ID{}, err
 	}
-	//todo: implement &&, ||
+	//todo: implement !
 	tmpNode := node.up.next
 	for tmpNode.pegRule == rulePARAMS_VARS {
 		tmpNode = tmpNode.next
@@ -468,13 +468,19 @@ func (node *node32) checkBoolExpression(buffer string, scope *Scope) (*node32, e
 	}
 
 	tmp := node.next
+	var changeOperandType bool
 
 	for tmp.pegRule != ruleBODY {
 		if tmp.pegRule == ruleBOOL_EXPR_VALUE {
 			valueType, _ := tmp.up.getValueType(buffer, scope)
-			if operandType != valueType {
+			if !changeOperandType && operandType != valueType {
 				return node, NewSemanticsErrorf(buffer, node, "cannot compare variables of different types: %s, %s", operandType, valueType)
+			} else if changeOperandType {
+				operandType = valueType
+				changeOperandType = false
 			}
+		} else if tmp.pegRule == ruleBOOL_OP && buffer[tmp.begin:tmp.end] == "&&" || buffer[tmp.begin:tmp.end] == "||" {
+			changeOperandType = true
 		}
 
 		tmp = tmp.next

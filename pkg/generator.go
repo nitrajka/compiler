@@ -265,6 +265,7 @@ func (node *node32) getBoolExprValue(buffer string) ([]jen.Code, *node32) {
 
 	var op string
 	var wasOp bool
+	var wasAndOr bool
 	var leftOp *jen.Statement
 	tmpNode := node
 
@@ -292,14 +293,23 @@ func (node *node32) getBoolExprValue(buffer string) ([]jen.Code, *node32) {
 					tmp = jen.Lit(buffer[tmpNode.up.begin:tmpNode.up.end])
 				}
 
-				if wasOp && tmpNode.next != nil && tmpNode.next.pegRule == ruleBOOL_OP {
+				if wasOp && tmpNode.next != nil && tmpNode.next.pegRule == ruleBOOL_OP &&
+					buffer[tmpNode.next.begin:tmpNode.next.end] != "&&" &&
+					buffer[tmpNode.next.begin:tmpNode.next.end] != "||" && !wasAndOr {
 					leftOp = leftOp.Op("&&").Add(tmp)
+					wasOp = false
+				} else if wasAndOr && tmpNode.next != nil {
+					wasAndOr = false
 				}
 			}
 		} else if tmpNode.pegRule == ruleBOOL_OP {
 			op = buffer[tmpNode.begin:tmpNode.end]
 			leftOp = leftOp.Op(op)
-			wasOp = true
+			if op != "&&" && op != "||" {
+				wasOp = true
+			} else {
+				wasAndOr = true
+			}
 		}
 
 		tmpNode = tmpNode.next

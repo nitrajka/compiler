@@ -1576,6 +1576,24 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 						position, tokenIndex = position97, tokenIndex97
 						{
 							switch buffer[position] {
+							case '|':
+								if buffer[position] != rune('|') {
+									goto l94
+								}
+								position++
+								if buffer[position] != rune('|') {
+									goto l94
+								}
+								position++
+							case '&':
+								if buffer[position] != rune('&') {
+									goto l94
+								}
+								position++
+								if buffer[position] != rune('&') {
+									goto l94
+								}
+								position++
 							case '!':
 								if buffer[position] != rune('!') {
 									goto l94
@@ -1634,7 +1652,7 @@ func (p *MyParser) Init(options ...func(*MyParser) error) error {
 			position, tokenIndex = position94, tokenIndex94
 			return false
 		},
-		/* 22 BOOL_OP <- <(('<' '=') / ('>' '=') / ((&('!') ('!' '=')) | (&('=') ('=' '=')) | (&('>') '>') | (&('<') '<')))> */
+		/* 22 BOOL_OP <- <(('<' '=') / ('>' '=') / ((&('|') ('|' '|')) | (&('&') ('&' '&')) | (&('!') ('!' '=')) | (&('=') ('=' '=')) | (&('>') '>') | (&('<') '<')))> */
 		nil,
 		/* 23 ASSIGNMENT <- <(ASSIGNABLE JUST_SPACES '=' JUST_SPACES VALUE)> */
 		nil,

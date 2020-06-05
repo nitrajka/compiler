@@ -57,5 +57,27 @@ main { bool [b] string [a, d, c] int [i, j, k];
     	print("less than 10")
     }
 
+	i = 4
+	j = 6
+	k = 9
+    if 2 < 3 && 3 < 4 || 3 < 2 {;
+    	print("complex int type if works")
+    }
+
+    if k < i || i < k {;
+    	print("complex variable type if works")
+	}
+
+	a = "a"
+	d = "b"
+	c = "c"
+	if a == d || a < d && c >= d {;
+		print("complex string type if works")
+	}
+
+	if i < j && j < i || "abc" == "bca" || true == true {;
+		print("advanced multi-type if works")
+	}
+
 }
 endmain
