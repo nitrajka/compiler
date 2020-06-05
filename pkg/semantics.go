@@ -197,8 +197,6 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	if err := body.validateBody(buffer, functionScope, true); err != nil {
 		return ID{}, err
 	}
-	//todo: validate print statement (print(i) is invalid), print mus have only 1 parameter, print(void) invalid, print() prints newline
-	// no void type in print or function of type void
 	//todo: implement &&, ||
 	//todo: void call assignment: voidVar = call voidFunction() -> illegal
 	//todo: void global variables unnecessary (check and throw error?) + functions of void type cannot assign
@@ -313,19 +311,23 @@ func (node *node32) validateBody(buffer string, scope *Scope, functionBody bool)
 			switch statement.up.pegRule {
 			case ruleIF_STATEMENT:
 				if err2 := statement.up.validateIfStatement(buffer, bodyScope); err2 != nil {
-					return err
+					return err2
 				}
 			case ruleWHILE_STATEMENT:
 				if err2 := statement.up.validateWhileStatement(buffer, bodyScope); err2 != nil {
-					return err
+					return err2
 				}
 			case ruleASSIGNMENT:
 				if err2 := statement.up.validateAssignment(buffer, bodyScope); err2 != nil {
-					return err
+					return err2
 				}
 			case ruleFUNC_CALL: // lebo viem modifikovat globalne premenne
 				if err2 := statement.up.validateFuncCall(buffer, bodyScope); err2 != nil {
-					return err
+					return err2
+				}
+			case rulePRINT_STATEMENT:
+				if err2 := statement.up.validatePrint(buffer, bodyScope); err2 != nil {
+					return err2
 				}
 			}
 
@@ -623,6 +625,39 @@ func (node *node32) validateFuncCall(buffer string, scope *Scope) error {
 
 		if typ != varType {
 			return NewSemanticsErrorf(buffer, node, "variable type does not match function parameter type: %s != %s", typ, varType)
+		}
+	}
+
+	return nil
+}
+
+func (node *node32) validatePrint(buffer string, scope *Scope) error {
+	if node.pegRule != rulePRINT_STATEMENT || node.up == nil {
+		return nil
+	}
+
+	value := node.up
+	if value.up == nil { // printing 'void'
+		return NewSemanticsErrorf(buffer, node, "cannot print void value")
+	}
+
+	if value.up.pegRule == ruleID {
+		typ, err := value.up.getValueType(buffer, scope)
+		if err != nil {
+			return err
+		}
+
+		if typ == Void {
+			return NewSemanticsErrorf(buffer, node, "cannot print value of type void")
+		}
+	} else if value.up.pegRule == ruleEXPRESSION {
+		typ, err := value.up.up.validateExpression(buffer, scope)
+		if err != nil {
+			return err
+		}
+
+		if typ == Void {
+			return NewSemanticsErrorf(buffer, node, "cannot print value of type void")
 		}
 	}
 
