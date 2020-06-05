@@ -79,5 +79,17 @@ main { bool [b] string [a, d, c] int [i, j, k];
 		print("advanced multi-type if works")
 	}
 
+	if true && true {;
+		print("true and true")
+	}
+
+	if true {;
+		print("true")
+	}
+
+	if false == false {;
+		print("false is false")
+	}
+
 }
 endmain
