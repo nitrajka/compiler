@@ -1,2 +1,0 @@
-- semantics is valid on recursive call
-- mozem pouzit nie len tie funckcie ktore boli vyssie zadefinovane
