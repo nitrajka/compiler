@@ -11,6 +11,8 @@ type SemanticsError struct {
 	context []string
 }
 
+const Main = "main"
+
 func (e *SemanticsError) Error() string {
 	line := strings.Count(e.buffer[:e.node.begin], "\n") + 1
 	tmp := fmt.Sprintf("semantics error on line %d", line)
@@ -115,6 +117,9 @@ func (node *node32) CheckSemantics(buffer string) error {
 		return err
 	}
 
+	globalScope.currentFunction = Main
+	globalScope.vars[Main] = ID{variableKind: Function, variableType: Void, name: Main}
+
 	if tmpNode.pegRule == ruleFUNCTIONS {
 		functionNode := tmpNode.up
 
@@ -145,8 +150,6 @@ func (node *node32) CheckSemantics(buffer string) error {
 	}
 
 	// validate main body
-	globalScope.currentFunction = "main"
-	globalScope.vars["main"] = ID{variableKind: Function, variableType: Void, name: "string"} // todo: need additionalInfo??
 	err = tmpNode.validateBody(buffer, globalScope, false)
 
 	if err != nil {
@@ -611,6 +614,10 @@ func (node *node32) validateFuncCall(buffer string, scope *Scope) error {
 	id, found := stringToID(scope, funcName)
 	if !found {
 		return NewSemanticsErrorf(buffer, node, "function %s not defined before used", funcName)
+	}
+
+	if id.name == Main {
+		return NewSemanticsErrorf(buffer, node, "calling main is illegal")
 	}
 
 	fun, ok := id.additionalInfo.(Func)
