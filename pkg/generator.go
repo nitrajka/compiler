@@ -9,8 +9,6 @@ import (
 )
 
 func (node *node32) Generate(buffer, to string) error {
-	// node.PrettyPrint(os.Stdout, buffer)
-
 	f := jen.NewFile("main")
 
 	tmpNode, paramsVars := node.up.generateParamsVars(buffer)

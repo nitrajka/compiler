@@ -200,7 +200,7 @@ func (node *node32) validateFunction(buffer string, scope *Scope) (ID, error) {
 	if err := body.validateBody(buffer, functionScope, true); err != nil {
 		return ID{}, err
 	}
-	//todo: implement !
+
 	tmpNode := node.up.next
 	for tmpNode.pegRule == rulePARAMS_VARS {
 		tmpNode = tmpNode.next
@@ -421,7 +421,7 @@ func (node *node32) validateAssignment(buffer string, scope *Scope) error {
 			return AddErrorContext(err, "could not get type of value")
 		}
 
-		//reason for this is, that in go assignment of a void function to a variable is invalid
+		// reason for this is, that in go assignment of a void function to a variable is invalid
 		if valueType == Void { // it may be function, void, another void variable
 			return NewSemanticsErrorf(buffer, node, "cannot assign void value: %s", buffer[value.up.begin:value.up.end])
 		}
