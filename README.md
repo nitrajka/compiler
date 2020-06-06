@@ -92,9 +92,13 @@ A function can be defined as follows:
 func name(string [a]): string {; return ""}
 ```
 Return clause is optional for functions of type `void`. However, if you want to add a return clause for such function, make sure you return `void` - `return void`.
+
 Calling a function without assigning it to a variable is a valid Compilang call. Such call makes sense if the function modifies global variables. 
 
 It is invalid to assign call of a void type function to a variable. However, since it is not possible to create a variable of `void` type, the mentioned assignment is not possible to make.
+
+It is invalid to have 2 functions of the same name. 
+It is not possible to call main function.
 
 #### Body
 Body consists of 2 parts divided by a semicolon:
