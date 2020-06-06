@@ -2,18 +2,18 @@
 I made up the following grammar and programmed a compiler named Compilang for it. This is a university project.
 
 ### Prerequisites
-1. Install Golang by following the tutorial [here](https://golang.org/dl/)
-2. Install git by following the tutorial [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+1. Install Golang by following the tutorial [here](https://golang.org/dl/).
+2. Install git by following the tutorial [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
 ### Download and install Compilang compiler
-1. `git clone git@github.com:nitrajka/compiler.git`
+1. Run `git clone git@github.com:nitrajka/compiler.git`
 2. Go to `compiler/cmd/compilang`
 3. Run `go install` 
 
 ### Write and compile a Copmilang program
-1. Write a program in a working directory `program.compilang`
-2. The command `compilang program.compilang` compiles your program. If not specified flag `-o output_file.go`, the program will be compiled to `a.go` by default. You do not need to create the `output_file.go` manually, the compiler creates it for you.
-3. Run the compiled program with command `go run a.go` or `go run output_file.go` if you specified and output file in compilation step.
+1. Write a program `program.compilang` in a working directory 
+2. The command `compilang program.compilang` compiles your program. You can specify the output file with flag `-o output_file.go` (default is `-o a.go`).
+3. Run the compiled program with command `go run a.go`.
 
 
 ### Language syntax and examples
@@ -55,9 +55,9 @@ endmain
 The actual version of grammar can be found in [grammar.md](https://github.com/nitrajka/compiler/blob/master/pkg/grammar.md).
 The structure of a Compilang program is as follows:
 
-    1. Global variables
-    2. Function definitions
-    3. Main function
+1. Global variables
+2. Function definitions
+3. Main function
 
 It is not allowed to write code anywhere else than inside functions.
 #### Global variables and variable list
@@ -82,12 +82,13 @@ as well as between list of variables and the following type. Variables of type `
 
 A function can be defined as follows:
 
-    1. Keyword `func`
-    2. Function's identifier
-    3. Variable parameters declared as in `globals` section and enclosed in parenthesis.
-    4. Colon
-    5. Type 
-    6. Body
+1. Keyword `func`
+2. Function's identifier
+3. Variable parameters declared as in `globals` section and enclosed in parenthesis.
+4. Colon
+5. Type 
+6. Body
+
 ```
 func name(string [a]): string {; return ""}
 ```
@@ -102,9 +103,8 @@ It is not possible to call main function.
 
 #### Body
 Body consists of 2 parts divided by a semicolon:
-
-    1. variable declarations
-    2. statements
+1. variable declarations
+2. statements
     
 Since Compilang is compiled to Golang, I used the feature of assigning a base value for a variable of a type.
 For instance, in the example below, 
@@ -133,10 +133,10 @@ For instance, in the example below,
 ```
 The following four types of statement are supported in a body:
 
-    * assignment
-    * while loop
-    * if statement
-    * print statement
+* assignment
+* while loop
+* if statement
+* print statement
 
 #### Expressions
 Bool expression is expression which contains some of the bool operators - `&&`, `||`, `<`, `>`, `==`, `!=`, `<=`, `>=`.
@@ -158,12 +158,12 @@ According to the [grammar](https://github.com/nitrajka/compiler/blob/master/pkg/
 Scopes are nested. The outermost scope is global scope, which contains variables declared (actually defined with their base value as well) in `gloabls` section.
 Exactly two scopes are defined before the first statement in main function:
  
-    * globals cope
-    * scope created from variables defined in its body.
+* globals cope
+* scope created from variables defined in its body.
 Exactly two scopes are defined before the first statement in a function:
 
-    * global scope
-    * scope created from variables defined in its body and parameter variables
+* global scope
+* scope created from variables defined in its body and parameter variables
 
 
 Each time a variable is used, the semantics subprogram checks whether the variable exists. 
