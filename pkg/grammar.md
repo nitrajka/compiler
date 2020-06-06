@@ -40,10 +40,11 @@ STATEMENT ->
     | 'if' BOOL_EXPRESSION BODY ELSECLAUSE
     | 'while' BOOL_EXPRESSION BODY
     | FUNC_CALL
-FI1(STATEMENT) = FI1(ASSIGNEMENT) + {'if', 'while'} + FI1(FUNC_CALL)
-               = FI1(ASSIGNEMENT) + {'if', 'while'} + {'call'}
-               = FI1(ASSIGNEMENT) + {'if', 'while'} + {'call'}
-               = {'var', 'let', [a-z]+} + {'if', 'while'} + {'call'}
+    | 'print(' VALUE? ')'
+FI1(STATEMENT) = FI1(ASSIGNEMENT) + {'if', 'while'} + FI1(FUNC_CALL) + FI1('print(')
+               = FI1(ASSIGNEMENT) + {'if', 'while'} + {'call'} + {'print('}
+               = FI1(ASSIGNEMENT) + {'if', 'while'} + {'call'} + {'print('}
+               = {'var', 'let', [a-z]+} + {'if', 'while'} + {'call'} + {'print('}
 
 ELSECLAUSE -> 'else' BODY | ε
 FI1(ELSECLAUSE) = {'else'} + FO1(ELSECLAUSE)
@@ -54,12 +55,20 @@ FI1(ELSECLAUSE) = {'else'} + FO1(ELSECLAUSE)
 RETURN_CLAUSE -> 'return' VALUE
 FI1(RETURN_CLAUSE) = {'return'}
 
-VALUE -> 'var' ID | STRING | INTEGER | BOOLEAN | BOOL_EXPRESSION | ARRAY | EXPRESSION | MAP | 'void'
+VALUE -> 'var' ID | 'arr' ID INDEXED? | BOOLEAN | ARRAY | EXPRESSION | MAP | 'void'
 FI1(VALUE) = {'var', '"', [0-9]+, '-', 'true', 'false', '[]', 'voidV'} + FI1(BOOL_EXPRESSION) + FI1(EXPRESSION) + FI1(MAP)
            = {'var', '"', [0-9]+, '-', 'true', 'false', '[]', 'voidV'} + {'<', '>', '==', '!=', '<=', '>=', '{'} + {[a-z]+} + {'(', ','}
 
+EXPR_VALUE <- 'arr' ID INDEXED / FUNC_CALL / TEXT / INTEGER / ARRAY / ID
+
+BOOL_EXPR_VALUE <- BOOLEAN / 'arr' ID INDEXED / ID / INTEGER / TEXT
+
+INDEXED <- '[' INDEXABLE ']'
+
+INDEXABLE <- 'var' ID / INT
+
 ----------------------------------------------
-BOOL_EXPRESSION -> ID
+BOOL_EXPRESSION -> BOOL_EXPR_VALUE
             | BOOL_EXPRESSION '<' BOOL_EXPRESSION
             | BOOL_EXPRESSION '>' BOOL_EXPRESSION
             | BOOL_EXPRESSION '==' BOOL_EXPRESSION
@@ -67,7 +76,7 @@ BOOL_EXPRESSION -> ID
             | BOOL_EXPRESSION '<=' BOOL_EXPRESSION
             | BOOL_EXPRESSION '>=' BOOL_EXPRESSION
 ----------------------------------------------
-BOOL_EXPRESSION -> ID BOOL_EXPRESSION'
+BOOL_EXPRESSION -> BOOL_EXPR_VALUE BOOL_EXPRESSION'
 BOOL_EXPRESSION' -> '<' BOOL_EXPRESSION BOOL_EXPRESSION'
             | '>' BOOL_EXPRESSION BOOL_EXPRESSION'
             | '==' BOOL_EXPRESSION BOOL_EXPRESSION'
@@ -76,7 +85,7 @@ BOOL_EXPRESSION' -> '<' BOOL_EXPRESSION BOOL_EXPRESSION'
             | '>=' BOOL_EXPRESSION BOOL_EXPRESSION'
             | ε
 ----------------------------------------------
-FI1(BOOL_EXPRESSION) = {[a-z]+}
+FI1(BOOL_EXPRESSION) = {[a-z]+, 'true', 'false', 'arr', '-', [0-9], '"'}
 FI1(BOOL_EXPRESSION') = {'<', '>', '==', '!=', '<=', '>='} + FO1(BOOL_EXPRESSION')
     = {'<', '>', '==', '!=', '<=', '>='} + FO1(BOOL_EXPRESSION)
     = {'<', '>', '==', '!=', '<=', '>='} + FI1(BODY) + FO1(VALUE)
@@ -85,29 +94,29 @@ FI1(BOOL_EXPRESSION') = {'<', '>', '==', '!=', '<=', '>='} + FO1(BOOL_EXPRESSION
     = {'<', '>', '==', '!=', '<=', '>='} + {'{'} + {'}'} + FI1(STATEMENTS) + {']'}      //OPTIONAL: + {',', ')'}
     = {'<', '>', '==', '!=', '<=', '>='} + {'{'} + {'}'} + {'var', 'let', [a-z]+, 'if', 'while', 'call', 'return'} + {']'} //OPTIONAL: + {',', ')'}
 
-ASSIGNMENT -> 'var' ID TYPE '=' VALUE 
-            | 'let' ID '=' VALUE
-            | ID '=' VALUE
-FI1(ASSIGNMENT) = {'var'} + {'let'} + {[a-z]+}
+ASSIGNMENT -> ASSIGNABLE '=' VALUE
+FI1(ASSIGNMENT) = {'arr'} + {[a-z]+}
 
-FUNC_CALL -> 'call' ID '(' VAR_LIST ')'
+ASSIGNABLE <- 'arr' ID '[' INDEXABLE ']' / ID
+
+FUNC_CALL -> 'call' ID '(' VAR_LIST* ')'
 FI1(FUNC_CALL) = {'call'}
 
 ----------------------------------------------
-EXPRESSION -> ID 
+EXPRESSION -> EXPR_VALUE
     | EXPRESSION '+' EXPRESSION
     | EXPRESSION '-' EXPRESSION
     | EXPRESSION '*' EXPRESSION
     | EXPRESSION '/' EXPRESSION
 ----------------------------------------------
-EXPRESSION -> ID EXPRESSION'
+EXPRESSION -> EXPR_VALUE EXPRESSION'
 EXPRESSION' -> '+' EXPRESSION EXPRESSION'
     | '-' EXPRESSION EXPRESSION'
     | '*' EXPRESSION EXPRESSION'
     | '/' EXPRESSION EXPRESSION'
     | ε
 ----------------------------------------------
-FI1(EXPRESSION) = {[a-z]+}
+FI1(EXPRESSION) = {[a-z]+, 'arr', 'call', '"', '-', [0-9]+, '[]'}
 FI1(EXPRESSION') = {'+', '-', '*', '/'} + FO1(EXPPRESSION')
                  = {'+', '-', '*', '/'} + FO1(EXPRESSION)
                  = {'+', '-', '*', '/'} + FO1(VALUE)    // + FI1(KEY_VALUE_PAIRS')
@@ -116,17 +125,21 @@ FI1(EXPRESSION') = {'+', '-', '*', '/'} + FO1(EXPPRESSION')
                  = {'+', '-', '*', '/'} + {'}'} + FI1(STATEMENTS) + {']'}  //OPTIONAL: + {',', ')'}
                  = {'+', '-', '*', '/'} + {'}'} + {'var', 'let', [a-z]+, 'if', 'while', 'call', 'return'} + {']'} //OPTIONAL: + {',', ')'}
 
-ID -> [a-z]+
+ID <- FIRST_CHAR ID1*
+FIRST_CHAR <- [a-z] / '_' / [A-Z]
+ID1 <- [a-z] / '_' / [A-Z] / [0-9]
+
 INTEGER -> INT | '-' INT
 BOOLEAN -> 'true' | 'false'
-STRING -> '"' [a-z]+ '"'
+TEXT <- '"' STRING '"'
+STRING <- CHARS_IN_STRING*
+CHARS_IN_STRING <- ' ' / '!' / '#' / '$' / '%' / '&' / '(' / ')' / '*' / '+' / '-' / '<' / '>' / '=' / ',' / '.' / ':' / ';' / '?' / [0-9] / [a-z] / [A-Z]
 INT -> [0-9]+
 
+----------------------------------------------------TODO: MAP, ARRAY-----------------------------------------------------------
 ARRAY -> '[]' TYPE '[' VALUE ']'
 FI1(ARRAY) = {'[]'}
 
-
-----------------------------------------------------TODO: MAP-----------------------------------------------------------
 MAP -> '(' KEY_VALUE_PAIRS ')'
 FI1(MAP) = {'('}
 

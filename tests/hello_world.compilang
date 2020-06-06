@@ -2,8 +2,7 @@ globals
 endglobals
 
 main
-	{ ; print("Hello!")
+	{;	print("Hello!")
 		print("World!")
-		return void
 	}
 endmain

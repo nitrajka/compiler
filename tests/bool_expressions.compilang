@@ -1,95 +1,98 @@
 globals
 endglobals
 
-main { bool [b] string [a, d, c] int [i, j, k];
-	b = true
-	if b {;
-		print("b is true")
-	}
+main {
+    bool [b]
+    string [a, d, c]
+    int [i, j, k];
 
-	a = "hello"
-	d = "hello"
-	c = "hello"
-	if a == d == c {;
-		print("is equal")
-	}
+    b = true
+    if b {;
+        print("b is true")
+    }
 
-	c = "world"
-	if a == d != c {;
-    	print("hello == hello != world")
+    a = "hello"
+    d = "hello"
+    c = "hello"
+    if a == d == c {;
+        print("is equal")
+    }
+
+    c = "world"
+    if a == d != c {;
+        print("hello == hello != world")
     }
 
     a = "a"
     d = "b"
     c = "c"
     if a < d < c {;
-    	print("abc")
+        print("abc")
     }
 
     d = "a"
     if a == d < c {;
-    	print("aac")
+        print("aac")
     }
 
     if a <= d <= c {;
-    	print("aac")
+        print("aac")
     }
 
     d = "d"
     if c >= a != d == d {;
-    	print("adc")
+        print("adc")
     }
 
-	i = 0
-	j = 5
-	k = 10
+    i = 0
+    j = 5
+    k = 10
     while i <= j <= k {;
-		print("loop")
-		i = i+1
-		k = k-1
+        print("loop")
+        i = i+1
+        k = k-1
     }
 
     if 2 < i > 3 {;
-    	print("more than 3")
+        print("more than 3")
     }
 
     if 10 > i < 10 < 100 < 101 {;
-    	print("less than 10")
+        print("less than 10")
     }
 
-	i = 4
-	j = 6
-	k = 9
+    i = 4
+    j = 6
+    k = 9
     if 2 < 3 && 3 < 4 || 3 < 2 {;
-    	print("complex int type if works")
+        print("complex int type if works")
     }
 
     if k < i || i < k {;
-    	print("complex variable type if works")
-	}
+        print("complex variable type if works")
+    }
 
-	a = "a"
-	d = "b"
-	c = "c"
-	if a == d || a < d && c >= d {;
-		print("complex string type if works")
-	}
+    a = "a"
+    d = "b"
+    c = "c"
+    if a == d || a < d && c >= d {;
+        print("complex string type if works")
+    }
 
-	if i < j && j < i || "abc" == "bca" || true == true {;
-		print("advanced multi-type if works")
-	}
+    if i < j && j < i || "abc" == "bca" || true == true {;
+        print("advanced multi-type if works")
+    }
 
-	if true && true {;
-		print("true and true")
-	}
+    if true && true {;
+        print("true and true")
+    }
 
-	if true {;
-		print("true")
-	}
+    if true {;
+        print("true")
+    }
 
-	if false == false {;
-		print("false is false")
-	}
-
+    if false == false {;
+        print("false is false")
+    }
 }
 endmain

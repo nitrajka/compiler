@@ -2,217 +2,225 @@ globals
 endglobals
 
 func int1(int [i, j]): int {;
-	if i < j {;
-		return i
-	}
-	return j
+    if i < j {;
+        return i
+    }
+    return j
 }
 
 func int2(): int {;
-	return 8
+    return 8
 }
 
 func int3(): int { int [k];
-	k = 16
-	return var k
+    k = 16
+    return var k
 }
 
 func int4(int [i, j]): int {;
-	if i < j {;
-		return var i
-	}
-	return var j
+    if i < j {;
+        return var i
+    }
+    return var j
 }
 
 func void1(): void {;}
 func void2(): void {;
-	return void
+    return void
 }
 
 func bool1(): bool {;
-	return true
+    return true
 }
 
 func bool2(): bool {;
-	return false
+    return false
 }
 
 func bool3(bool [b]): bool {;
-	return var b
+    return var b
 }
 
 func expr1(string [a, b]): string {;
-	return a + b
+    return a + b
 }
 
 func expr2(): string {;
-	return "Hello" + " world!"
+    return "Hello" + " world!"
 }
 
 func expr3(string [a]): string {;
-	return "Hello" + a
+    return "Hello" + a
 }
 
 func expr4(int [a, b]): int {;
-	return a + b
+    return a + b
 }
 
 func expr5(int [a]): int {;
-	return a + 10
+    return a + 10
 }
 
 func expr6(): int {;
-	return 3 + 4
+    return 3 + 4
 }
 
 func expr7(): int {;
-	return 3 + -4
+    return 3 + -4
 }
 
 func expr8(): int {;
-	return 3 * 4
+    return 3 * 4
 }
 
 func expr9(int [a]): int {;
-	return a * 4
+    return a * 4
 }
 
 func expr10(int [a, b]): int {;
-	return a * b
+    return a * b
 }
 
 func expr11(): int {;
-	return 5/2
+    return 5/2
 }
 
 func expr12(): int {;
-	return 8/-2
+    return 8/-2
 }
 
 func expr13(int [a]): int {;
-	return a / 2
+    return a / 2
 }
 
 func expr14(int [a, b]): int {;
-	return a/b
+    return a/b
 }
 
 func expr15(): int {;
-	return -2/10
+    return -2/10
 }
 
 func expr16(): int {;
-	return -2 - 5
+    return -2 - 5
 }
 
 func expr17(): int {;
-	return 2 - 5
+    return 2 - 5
 }
 
 func expr18(): int {;
-	return -2 - -5
+    return -2 - -5
 }
 
 func expr19(int [a]): int {;
-	return a - 5
+    return a - 5
 }
 
 func expr20(int [a]): int {;
-	return -5 - a
+    return -5 - a
 }
 
 func expr21(int [a]): int {;
-	return a - -5
+    return a - -5
 }
 
 func expr22(): int {;
-	return 4 % 2
+    return 4 % 2
 }
 
 func expr23(): int {;
-	return -10 % 3
+    return -10 % 3
 }
 
 func expr24(): int {;
-	return -10 % -3
+    return -10 % -3
 }
 
 func expr25(int [a, b]): int {;
-	return a % b
+    return a % b
 }
 
 func expr26(): int {;
-	return -3 % 10
+    return -3 % 10
 }
 
 func expr27(): int {;
-	return -3 % -10
+    return -3 % -10
 }
 
 func expr28(): int {;
-	return 3 % 10
+    return 3 % 10
 }
 
 func expr29(int [a]): int {;
-	return 103 % a
+    return 103 % a
 }
 
-main {int [i, j, k , l, m, n, o, p, q, r, s, t] string [a, b, c];
-	i = 5
-	j = 6
-	l = 4
-	m = 8
-	n = 10
-	o = 12
-	p = 14
-	q = 3
-	r = 2
-	s = 47
-	t = 203
-	a = "Hello"
-	b = " world!"
-	c = " Saska"
-	print(call int1(i, j))
-	print(call int2())
-	print(call int3())
-	print(call int4(i, j))
-	call void1()
-	call void2()
-	print(call bool1())
-	print(call bool2())
-	print(call bool3(true))
-	print(call bool3(false))
-	print(call expr1(a, b))
-	print(call expr2())
-	print(call expr3(c))
-	print(call expr4(o, m))
-	print(call expr5(p))
-	print(call expr6())
-	print(call expr7())
-	print(call expr8())
-	print(call expr9(p))
-	print(call expr10(p, r))
-	print(call expr11())
-	print(call expr12())
-	print(call expr13(l))
-	print(call expr14(l, n))
+func expr30(): int {;
+	return 3--1
+}
 
-	print(call expr15())
-	print(call expr16())
-	print(call expr17())
-	print(call expr18())
-	print(call expr19(m))
-	print(call expr20(q))
-	print(call expr21(r))
-	print(call expr22())
-	print(call expr23())
-	print(call expr24())
-	print(call expr25(t, s))
-	print(call expr26())
-	print(call expr27())
-	print(call expr28())
-	print(call expr29(s))
-	print(call expr29(t))
+main {
+    int [i, j, k , l, m, n, o, p, q, r, s, t]
+    string [a, b, c];
+
+    i = 5
+    j = 6
+    l = 4
+    m = 8
+    n = 10
+    o = 12
+    p = 14
+    q = 3
+    r = 2
+    s = 47
+    t = 203
+    a = "Hello"
+    b = " world!"
+    c = " Saska"
+    print(call int1(i, j))
+    print(call int2())
+    print(call int3())
+    print(call int4(i, j))
+    call void1()
+    call void2()
+    print(call bool1())
+    print(call bool2())
+    print(call bool3(true))
+    print(call bool3(false))
+    print(call expr1(a, b))
+    print(call expr2())
+    print(call expr3(c))
+    print(call expr4(o, m))
+    print(call expr5(p))
+    print(call expr6())
+    print(call expr7())
+    print(call expr8())
+    print(call expr9(p))
+    print(call expr10(p, r))
+    print(call expr11())
+    print(call expr12())
+    print(call expr13(l))
+    print(call expr14(l, n))
+
+    print(call expr15())
+    print(call expr16())
+    print(call expr17())
+    print(call expr18())
+    print(call expr19(m))
+    print(call expr20(q))
+    print(call expr21(r))
+    print(call expr22())
+    print(call expr23())
+    print(call expr24())
+    print(call expr25(t, s))
+    print(call expr26())
+    print(call expr27())
+    print(call expr28())
+    print(call expr29(s))
+    print(call expr29(t))
+    print(call expr30())
 
 }
 endmain

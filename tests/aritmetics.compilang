@@ -1,19 +1,20 @@
 globals
 endglobals
 
-main {int [i, j, k1, k2, k3, k4, k5];
-	i = 3
-	j = 4
-	k1 = i + j
-	k2 = i - j
-	k3 = i * j
-	k4 = j / i
-	k5 = j % i
-	print(var k1)
-	print(var k2)
-	print(var k3)
-	print(var k4)
-	print(var k5)
-	return void
-}
-endmain
+main {
+    int [i, j, k1, k2, k3, k4, k5];
+
+    i = 3
+    j = 4
+    k1 = i + j
+    k2 = i - j
+    k3 = i * j
+    k4 = j / i
+    k5 = j % i
+    print(var k1)
+    print(var k2)
+    print(var k3)
+    print(var k4)
+    print(var k5)
+    return void
+} endmain
